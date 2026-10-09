@@ -55,6 +55,7 @@ const env = {
   TELEGRAM_WEBHOOK_SECRET: WEBHOOK_SECRET,
   APP_URL: BASE,
   PORT: String(PORT),
+  SEED_IGNORE_FILE: "1",
   SEED_USERS: JSON.stringify(Object.values(USERS).map((u, i) => ({ ...u, role: i === 0 ? "admin" : "student" }))),
 };
 rmSync(DB_DIR, { recursive: true, force: true });

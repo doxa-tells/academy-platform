@@ -1,0 +1,32 @@
+[
+  {
+    "role": "admin",
+    "name": "Дархан",
+    "login": "admin",
+    "passwordHash": "$2b$12$.Yj6VQ4JvwaetnlByn28DeM5YtDXJ8QSaUnOXhcDyGoog2XZoNtbS"
+  },
+  {
+    "role": "student",
+    "name": "Маргарита",
+    "login": "margarita",
+    "passwordHash": "$2b$12$1yaQs9xBihGQsNvs/TiJzu/RtVrBseUNSrWjK8UxfYSlqzhCkFN9S"
+  },
+  {
+    "role": "student",
+    "name": "Любовь",
+    "login": "lyubov",
+    "passwordHash": "$2b$12$MuSHM4t1mDKUsUWennF3LebifeRGTpdts1XVgEB3LFa/IgTAFtjWG"
+  },
+  {
+    "role": "student",
+    "name": "Казыбек",
+    "login": "kazybek",
+    "passwordHash": "$2b$12$8peKL2XLSRCbbCVPAbjbu.WyDIyHaQ0GndG0WhlsZQU2sIWMprrq."
+  },
+  {
+    "role": "student",
+    "name": "Кунжамиля",
+    "login": "kunzhamilya",
+    "passwordHash": "$2b$12$L0wJvHkKwhvvZnTHZJWXjOIRkgePQvDQzeCqsKxKy5a5QyOxKLMuG"
+  }
+]

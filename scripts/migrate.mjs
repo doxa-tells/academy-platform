@@ -1,6 +1,6 @@
 // Runs database migrations and the first-time seed.
 // Called automatically before `next build` (see package.json) and locally via `npm run db:migrate`.
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 
@@ -39,24 +39,45 @@ const rows = async (q) => (await db.execute(q)).rows;
 const code = () => randomBytes(9).toString("base64url");
 
 // ---- first-time seed: users ----
-const [{ n: userCount }] = await rows(sql`select count(*)::int as n from users`);
-if (userCount === 0 && process.env.SEED_USERS) {
-  let list = [];
+// Runs until it succeeds once (marker in settings), so a deploy made before
+// SEED_USERS was added doesn't block it. Afterwards it never touches accounts again.
+// Source: scripts/seed-users.json (only bcrypt hashes, safe to commit) or the SEED_USERS env var.
+const [seedDone] = await rows(sql`select value from settings where key = 'seed_users_done'`);
+const seedFile = new URL("./seed-users.json", import.meta.url);
+const useFile = existsSync(seedFile) && process.env.SEED_IGNORE_FILE !== "1";
+const rawSeed = useFile ? readFileSync(seedFile, "utf8").trim() : (process.env.SEED_USERS || "").trim();
+if (seedDone) {
+  console.log("[seed] users already seeded earlier — skipping");
+} else if (!rawSeed) {
+  console.log("[seed] no seed-users.json and SEED_USERS is not set — no accounts created");
+} else {
+  let list = null;
   try {
-    list = JSON.parse(process.env.SEED_USERS);
-  } catch {
-    console.log("[seed] SEED_USERS is not valid JSON — skipping");
+    let parsed = JSON.parse(rawSeed);
+    if (typeof parsed === "string") parsed = JSON.parse(parsed); // value pasted with extra quotes
+    list = Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    console.log(`[seed] seed list is not valid JSON (${e.message}) — no accounts created`);
   }
-  for (const u of list) {
-    if (!u.login || !u.password || !u.name) continue;
-    const hash = await bcrypt.hash(u.password, 10);
-    const role = u.role === "admin" ? "admin" : "student";
-    await db.execute(
-      sql`insert into users (role, name, login, password_hash, telegram_link_code)
-          values (${role}, ${u.name}, ${u.login.toLowerCase()}, ${hash}, ${code()})`,
-    );
+  if (list) {
+    let created = 0;
+    for (const u of list) {
+      if (!u?.login || !u?.name || !(u?.password || u?.passwordHash)) continue;
+      const login = String(u.login).trim().toLowerCase();
+      const [exists] = await rows(sql`select id from users where login = ${login}`);
+      if (exists) continue;
+      const hash = u.passwordHash ? String(u.passwordHash) : await bcrypt.hash(String(u.password), 10);
+      const role = u.role === "admin" ? "admin" : "student";
+      await db.execute(
+        sql`insert into users (role, name, login, password_hash, telegram_link_code)
+            values (${role}, ${String(u.name)}, ${login}, ${hash}, ${code()})`,
+      );
+      created++;
+    }
+    await db.execute(sql`insert into settings (key, value) values ('seed_users_done', ${new Date().toISOString()})
+                         on conflict (key) do nothing`);
+    console.log(`[seed] created ${created} users: ${list.map((u) => u?.login).join(", ")}`);
   }
-  console.log(`[seed] created ${list.length} users`);
 }
 
 // ---- first-time seed: starter course content ----
