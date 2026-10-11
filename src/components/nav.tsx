@@ -32,8 +32,8 @@ function Count({ n, tone = "mark" }: { n?: number; tone?: "mark" | "cobalt" }) {
   return (
     <span
       className={cn(
-        "ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums",
-        tone === "mark" ? "bg-mark text-ink" : "bg-cobalt text-white",
+        "ml-auto inline-flex h-5 min-w-5 items-center justify-center px-1.5 text-xs font-bold tabular-nums",
+        tone === "mark" ? "bg-mark text-black" : "bg-cobalt text-black",
       )}
     >
       {n}
@@ -43,12 +43,13 @@ function Count({ n, tone = "mark" }: { n?: number; tone?: "mark" | "cobalt" }) {
 
 function Brand({ appName, sub }: { appName: string; sub: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3">
-      <img src="/icon.svg" alt="" className="size-8" />
-      <div className="min-w-0">
-        <p className="truncate font-display text-[15px] font-semibold leading-none text-ink">{appName}</p>
-        <p className="mt-1 truncate text-xs text-muted">{sub}</p>
+    <div className="px-4">
+      <div className="flex items-center gap-3">
+        <img src="/logo.png" alt="" className="size-10 shrink-0 drop-shadow-[0_0_10px_rgb(0_253_255/0.45)]" />
+        <p className="glow truncate font-display text-[11px] leading-none text-cobalt">{appName}</p>
       </div>
+      {/* The logo file has ~8px of empty space under the mark: tuck the name right under it */}
+      <p className="-mt-1.5 truncate pl-[52px] text-xs leading-tight text-muted">{sub}</p>
     </div>
   );
 }
@@ -59,7 +60,7 @@ function LogoutButton({ compact }: { compact?: boolean }) {
       <button
         type="submit"
         className={cn(
-          "flex items-center gap-3 rounded-lg text-[15px] text-ink-2 hover:bg-ink/5 hover:text-ink",
+          "flex items-center gap-3 text-[14px] text-ink-2 hover:bg-cobalt/10 hover:text-cobalt",
           compact ? "p-2" : "w-full px-3 py-2",
         )}
         aria-label="Выйти"
@@ -74,7 +75,7 @@ function LogoutButton({ compact }: { compact?: boolean }) {
 function Sidebar({ items, appName, sub }: { items: Item[]; appName: string; sub: string }) {
   const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface py-6 md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-black/75 py-6 backdrop-blur-sm md:flex">
       <Brand appName={appName} sub={sub} />
       <nav className="mt-8 flex-1 space-y-0.5 px-3" aria-label="Разделы">
         {items.map((item) => {
@@ -86,11 +87,14 @@ function Sidebar({ items, appName, sub }: { items: Item[]; appName: string; sub:
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-[15px] transition-colors",
-                active ? "bg-cobalt-soft font-medium text-cobalt-dark" : "text-ink-2 hover:bg-ink/5 hover:text-ink",
+                "flex items-center gap-3 px-3 py-2 text-[14px] transition-colors",
+                active ? "bg-cobalt font-semibold text-black" : "text-ink-2 hover:bg-cobalt/10 hover:text-cobalt",
               )}
             >
-              <Icon className="size-[18px]" aria-hidden />
+              <span aria-hidden className={active ? "text-black" : "text-muted"}>
+                {active ? ">" : " "}
+              </span>
+              <Icon className="size-[17px]" aria-hidden />
               {item.label}
               <Count n={item.badge} />
             </Link>
@@ -106,10 +110,10 @@ function Sidebar({ items, appName, sub }: { items: Item[]; appName: string; sub:
 
 function MobileTop({ appName }: { appName: string }) {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-paper/90 px-4 py-2.5 backdrop-blur md:hidden">
-      <div className="flex items-center gap-2">
-        <img src="/icon.svg" alt="" className="size-7" />
-        <span className="font-display text-[15px] font-semibold text-ink">{appName}</span>
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-black/85 px-4 py-2.5 backdrop-blur md:hidden">
+      <div className="flex items-center gap-2.5">
+        <img src="/logo.png" alt="" className="size-8" />
+        <span className="glow font-display text-[11px] text-cobalt">{appName}</span>
       </div>
       <LogoutButton compact />
     </header>
@@ -120,7 +124,7 @@ function BottomBar({ items }: { items: Item[] }) {
   const pathname = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line-strong bg-black/92 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       aria-label="Разделы"
     >
       <ul className="mx-auto flex max-w-lg">
@@ -133,14 +137,14 @@ function BottomBar({ items }: { items: Item[] }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center gap-1 pb-2 pt-2.5 text-[11px] font-medium",
-                  active ? "text-cobalt" : "text-muted",
+                  "relative flex flex-col items-center gap-1 border-t-2 pb-2 pt-2 text-[11px] font-medium",
+                  active ? "border-cobalt text-cobalt" : "border-transparent text-muted",
                 )}
               >
                 <Icon className="size-[22px]" aria-hidden />
                 {item.label}
                 {item.badge ? (
-                  <span className="absolute left-1/2 top-1.5 ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-mark px-1 text-[10px] font-bold text-ink">
+                  <span className="absolute left-1/2 top-1.5 ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-mark px-1 text-[10px] font-bold text-black">
                     {item.badge}
                   </span>
                 ) : null}

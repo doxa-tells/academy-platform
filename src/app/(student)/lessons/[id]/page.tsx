@@ -26,7 +26,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         <Link href="/lessons" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
           <ArrowLeft className="size-4" aria-hidden /> {mod.title}
         </Link>
-        <h1 className="mt-2 font-display text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[26px]">{lesson.title}</h1>
+        <h1 className="cursor glow mt-3 font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{lesson.title}</h1>
       </div>
 
       <VideoEmbed url={lesson.videoUrl} title={lesson.title} />

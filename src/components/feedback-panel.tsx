@@ -87,7 +87,7 @@ export function FeedbackPanel({
                         </>
                       ) : null}
                     </span>
-                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-ink/60 py-1 text-xs font-medium text-white">
+                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/60 py-1 text-xs font-medium text-white">
                       <PenLine className="size-3.5" aria-hidden /> {has ? "Изменить" : "Пометить"}
                     </span>
                   </button>

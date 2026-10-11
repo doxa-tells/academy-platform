@@ -53,7 +53,7 @@ export function PostComposer({ students }: { students: { id: string; name: strin
               key={a}
               className={cn(
                 "cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium ring-1",
-                audience === a ? "bg-cobalt text-white ring-cobalt" : "bg-surface text-ink-2 ring-line-strong",
+                audience === a ? "bg-cobalt text-black ring-cobalt" : "bg-surface text-ink-2 ring-line-strong",
               )}
             >
               <input type="radio" name="audience" value={a} checked={audience === a} onChange={() => setAudience(a)} className="sr-only" />

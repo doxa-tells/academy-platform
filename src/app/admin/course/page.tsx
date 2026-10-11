@@ -13,12 +13,12 @@ function MoveButtons({ kind, id, first, last }: { kind: "module" | "lesson" | "a
   return (
     <div className="flex shrink-0">
       <form action={move.bind(null, kind, id, "up")}>
-        <button type="submit" disabled={first} className="rounded-md p-1.5 text-ink-2 hover:bg-ink/5 disabled:opacity-25" aria-label="Выше">
+        <button type="submit" disabled={first} className="rounded-md p-1.5 text-ink-2 hover:bg-cobalt/10 disabled:opacity-25" aria-label="Выше">
           <ArrowUp className="size-4" />
         </button>
       </form>
       <form action={move.bind(null, kind, id, "down")}>
-        <button type="submit" disabled={last} className="rounded-md p-1.5 text-ink-2 hover:bg-ink/5 disabled:opacity-25" aria-label="Ниже">
+        <button type="submit" disabled={last} className="rounded-md p-1.5 text-ink-2 hover:bg-cobalt/10 disabled:opacity-25" aria-label="Ниже">
           <ArrowDown className="size-4" />
         </button>
       </form>
@@ -42,7 +42,7 @@ export default async function CoursePage() {
               {m.description ? <p className="mt-0.5 text-sm text-ink-2">{m.description}</p> : null}
             </div>
             <MoveButtons kind="module" id={m.id} first={mi === 0} last={mi === tree.length - 1} />
-            <Link href={`/admin/course/module/${m.id}`} className="rounded-md p-1.5 text-ink-2 hover:bg-ink/5" aria-label="Редактировать модуль">
+            <Link href={`/admin/course/module/${m.id}`} className="rounded-md p-1.5 text-ink-2 hover:bg-cobalt/10" aria-label="Редактировать модуль">
               <Pencil className="size-4" />
             </Link>
           </div>

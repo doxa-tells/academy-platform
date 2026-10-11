@@ -67,7 +67,7 @@ export default async function AdminBoard() {
                       </div>
                       <div className="flex gap-1">
                         <form action={togglePin.bind(null, post.id, !post.pinned)}>
-                          <button type="submit" className="rounded-lg p-2 text-ink-2 hover:bg-ink/5 hover:text-ink" aria-label={post.pinned ? "Открепить" : "Закрепить"}>
+                          <button type="submit" className="rounded-lg p-2 text-ink-2 hover:bg-cobalt/10 hover:text-ink" aria-label={post.pinned ? "Открепить" : "Закрепить"}>
                             {post.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
                           </button>
                         </form>

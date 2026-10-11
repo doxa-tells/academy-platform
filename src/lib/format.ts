@@ -105,3 +105,9 @@ export function initials(name: string) {
     .map((p) => p[0]?.toUpperCase())
     .join("");
 }
+
+/** Avoid repeating the module title when a module has a single lesson with the same name. */
+export function lessonLabel(lessonTitle: string, moduleTitle: string, index: number, count: number) {
+  if (moduleTitle.includes(lessonTitle)) return count > 1 ? `Видеоурок ${index + 1}` : "Видеоурок";
+  return lessonTitle;
+}

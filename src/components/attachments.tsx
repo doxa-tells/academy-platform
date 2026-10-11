@@ -57,7 +57,7 @@ function Lightbox({ item, onClose }: { item: AttachmentView; onClose: () => void
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && ref.current?.close()}
-      className="m-auto max-h-[92dvh] max-w-[94vw] bg-transparent p-0 backdrop:bg-ink/80"
+      className="m-auto max-h-[92dvh] max-w-[94vw] bg-transparent p-0 backdrop:bg-black/85"
     >
       <div className="relative inline-block">
         <img src={item.url} alt={item.name} className="block max-h-[90dvh] max-w-[94vw] rounded-lg object-contain" />
@@ -70,7 +70,7 @@ function Lightbox({ item, onClose }: { item: AttachmentView; onClose: () => void
         <button
           type="button"
           onClick={() => ref.current?.close()}
-          className="absolute right-2 top-2 rounded-full bg-ink/70 p-1.5 text-white"
+          className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
           aria-label="Закрыть"
         >
           <X className="size-5" />
@@ -108,7 +108,7 @@ export function AttachmentGrid({ items, renderExtra }: { items: AttachmentView[]
                   ) : null}
                 </span>
                 {a.kind === "annotation" ? (
-                  <span className="absolute left-2 top-2 rounded-full bg-mark px-2 py-0.5 text-xs font-semibold text-ink">С пометками</span>
+                  <span className="absolute left-2 top-2 rounded-full bg-mark px-2 py-0.5 text-xs font-semibold text-black">С пометками</span>
                 ) : null}
               </button>
               {renderExtra?.(a)}

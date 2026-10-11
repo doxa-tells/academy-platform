@@ -8,3 +8,8 @@ node_modules
 next-env.d.ts
 tests/artifacts
 .vercel
+
+# raw design assets (processed copies live in /public)
+/logo.PNG
+/Снимок*
+/fonts*

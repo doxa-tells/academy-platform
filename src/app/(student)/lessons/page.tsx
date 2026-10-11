@@ -3,6 +3,7 @@ import { CheckCircle2, PlayCircle } from "lucide-react";
 import { requireStudent } from "@/lib/auth";
 import { computeProgress, getCourseTree, getStudentState } from "@/lib/course";
 import { EmptyState, PageHeader, ProgressBar } from "@/components/ui";
+import { lessonLabel } from "@/lib/format";
 
 export const metadata = { title: "Уроки" };
 
@@ -35,7 +36,7 @@ export default async function LessonsPage() {
                     <li key={l.id}>
                       <Link href={`/lessons/${l.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-paper">
                         <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted">{i + 1}</span>
-                        <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{l.title}</span>
+                        <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{lessonLabel(l.title, mp.module.title, i, mp.module.lessons.length)}</span>
                         {done ? (
                           <CheckCircle2 className="size-5 shrink-0 text-st-accepted" aria-label="Пройден" />
                         ) : (

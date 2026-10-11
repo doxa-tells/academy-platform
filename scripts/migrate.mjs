@@ -116,6 +116,46 @@ if (moduleCount === 0 && adminCount > 0 && process.env.SEED_DEMO !== "0") {
   console.log("[seed] starter course content created");
 }
 
+// ---- course program (8 lessons), once ----
+// Replaces the untouched starter module; never touches modules someone already worked in.
+if (process.env.SEED_PROGRAM !== "0") {
+  const [programDone] = await rows(sql`select value from settings where key = 'course_program_v1'`);
+  if (!programDone) {
+    const { PROGRAM } = await import("./course-program.mjs");
+    const [existing] = await rows(sql`select id from modules where title like 'Урок 1.%' limit 1`);
+    if (!existing) {
+      const starters = await rows(sql`select id from modules where title = 'Модуль 1. Старт'`);
+      for (const s of starters) {
+        const [usage] = await rows(sql`
+          select (select count(*) from submissions sb join assignments a on a.id = sb.assignment_id where a.module_id = ${s.id})
+               + (select count(*) from lesson_completions lc join lessons l on l.id = lc.lesson_id where l.module_id = ${s.id}) as n`);
+        if (Number(usage.n) === 0) {
+          await db.execute(sql`delete from modules where id = ${s.id}`);
+          console.log("[seed] removed the untouched starter module");
+        }
+      }
+      const [{ max }] = await rows(sql`select coalesce(max(position), -1)::int as max from modules`);
+      let position = Number(max) + 1;
+      for (const p of PROGRAM) {
+        const [mod] = await rows(sql`
+          insert into modules (title, description, position)
+          values (${p.moduleTitle}, '', ${position++}) returning id`);
+        const [lesson] = await rows(sql`
+          insert into lessons (module_id, title, description, video_url, position)
+          values (${mod.id}, ${p.lessonTitle}, ${p.lessonDescription}, '', 0) returning id`);
+        await db.execute(sql`
+          insert into assignments (module_id, lesson_id, title, description, position)
+          values (${mod.id}, ${lesson.id}, ${p.assignmentTitle}, ${p.assignmentDescription}, 0)`);
+      }
+      console.log(`[seed] course program created: ${PROGRAM.length} lessons`);
+    } else {
+      console.log("[seed] course program already present");
+    }
+    await db.execute(sql`insert into settings (key, value) values ('course_program_v1', ${new Date().toISOString()})
+                         on conflict (key) do nothing`);
+  }
+}
+
 // ---- Telegram webhook (production deploys only; never fails the build) ----
 const tgToken = process.env.TELEGRAM_BOT_TOKEN;
 const prodUrl =

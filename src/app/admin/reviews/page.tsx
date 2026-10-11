@@ -38,7 +38,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
             aria-selected={t.key === current.key}
             className={cn(
               "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium",
-              t.key === current.key ? "bg-cobalt text-white" : "text-ink-2 hover:bg-ink/5",
+              t.key === current.key ? "bg-cobalt text-black" : "text-ink-2 hover:bg-cobalt/10",
             )}
           >
             {t.label}
@@ -47,11 +47,11 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
       </div>
       {students.length > 1 ? (
         <div className="mb-5 flex flex-wrap gap-2 text-sm">
-          <Link href={qs(current.key)} className={cn("rounded-full px-3 py-1", !student ? "bg-ink text-white" : "bg-surface text-ink-2 ring-1 ring-line")}>
+          <Link href={qs(current.key)} className={cn("rounded-full px-3 py-1", !student ? "bg-cobalt text-black" : "bg-surface text-ink-2 ring-1 ring-line")}>
             Все студенты
           </Link>
           {students.map((s) => (
-            <Link key={s.id} href={qs(current.key, s.id)} className={cn("rounded-full px-3 py-1", student === s.id ? "bg-ink text-white" : "bg-surface text-ink-2 ring-1 ring-line")}>
+            <Link key={s.id} href={qs(current.key, s.id)} className={cn("rounded-full px-3 py-1", student === s.id ? "bg-cobalt text-black" : "bg-surface text-ink-2 ring-1 ring-line")}>
               {s.name}
             </Link>
           ))}

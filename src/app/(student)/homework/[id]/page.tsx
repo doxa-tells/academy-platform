@@ -43,7 +43,7 @@ export default async function HomeworkPage({ params }: { params: Promise<{ id: s
           <ArrowLeft className="size-4" aria-hidden /> {mod?.title ?? "Домашки"}
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="font-display text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[26px]">{assignment.title}</h1>
+          <h1 className="cursor glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{assignment.title}</h1>
           <StatusBadge status={st.status} className="mt-1" />
         </div>
         {assignment.dueAt ? (

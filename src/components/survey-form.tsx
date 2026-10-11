@@ -37,7 +37,7 @@ export function SurveyForm({ moduleId, initialScore, initialImprove }: { moduleI
               onClick={() => setScore(n)}
               className={cn(
                 "h-12 rounded-[var(--radius-control)] border text-[17px] font-semibold tabular-nums transition-colors",
-                score === n ? "border-cobalt bg-cobalt text-white" : "border-line-strong bg-surface text-ink hover:border-ink-2",
+                score === n ? "border-cobalt bg-cobalt text-black" : "border-line-strong bg-surface text-ink hover:border-ink-2",
               )}
             >
               {n}

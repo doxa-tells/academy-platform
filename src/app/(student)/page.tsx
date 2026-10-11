@@ -37,8 +37,10 @@ export default async function StudentHome() {
   return (
     <div className="space-y-8">
       <div className="animate-rise">
-        <p className="text-[15px] text-ink-2">Привет, {firstName}</p>
-        <h1 className="mt-1 font-display text-[24px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[28px]">
+        <p className="text-[14px] text-ink-2">
+          <span className="text-cobalt">$</span> привет, {firstName}
+        </p>
+        <h1 className="cursor glow mt-3 font-display text-[14px] leading-[1.75] text-cobalt sm:text-[18px]">
           {progress.percent === 100 ? "Курс пройден целиком" : "Продолжим с того места, где остановились"}
         </h1>
       </div>
@@ -71,7 +73,7 @@ export default async function StudentHome() {
         <Link
           key={s.module.id}
           href={`/survey/${s.module.id}`}
-          className="flex items-center gap-4 rounded-[var(--radius-card)] bg-mark px-5 py-4 text-ink transition-transform hover:-translate-y-0.5"
+          className="flex items-center gap-4 rounded-[var(--radius-card)] bg-mark px-5 py-4 text-black transition-transform hover:-translate-y-0.5"
         >
           <Sparkles className="size-6 shrink-0" aria-hidden />
           <div className="min-w-0 flex-1">

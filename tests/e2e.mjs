@@ -56,6 +56,7 @@ const env = {
   APP_URL: BASE,
   PORT: String(PORT),
   SEED_IGNORE_FILE: "1",
+  SEED_PROGRAM: "0",
   SEED_USERS: JSON.stringify(Object.values(USERS).map((u, i) => ({ ...u, role: i === 0 ? "admin" : "student" }))),
 };
 rmSync(DB_DIR, { recursive: true, force: true });

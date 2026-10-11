@@ -7,7 +7,7 @@ export function ModuleFields({ mod }: { mod?: Module }) {
     <>
       {mod ? <input type="hidden" name="id" value={mod.id} /> : null}
       <Field label="Название модуля" htmlFor={`mtitle-${mod?.id ?? "new"}`}>
-        <Input id={`mtitle-${mod?.id ?? "new"}`} name="title" defaultValue={mod?.title} required maxLength={200} placeholder="Модуль 2. Свет и композиция" />
+        <Input id={`mtitle-${mod?.id ?? "new"}`} name="title" defaultValue={mod?.title} required maxLength={200} placeholder="Урок 9. Название урока" />
       </Field>
       <Field label="Короткое описание" htmlFor={`mdesc-${mod?.id ?? "new"}`}>
         <Textarea id={`mdesc-${mod?.id ?? "new"}`} name="description" defaultValue={mod?.description} rows={2} maxLength={2000} />

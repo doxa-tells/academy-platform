@@ -11,21 +11,23 @@ type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 type Size = "sm" | "md" | "lg";
 
 const variantClass: Record<Variant, string> = {
-  primary: "bg-cobalt text-white hover:bg-cobalt-dark disabled:bg-cobalt/50",
-  secondary: "bg-surface text-ink border border-line-strong hover:border-ink-2 disabled:opacity-50",
-  ghost: "text-ink-2 hover:bg-ink/5 hover:text-ink disabled:opacity-50",
-  danger: "bg-surface text-st-revision border border-st-revision/40 hover:bg-st-revision-bg disabled:opacity-50",
-  success: "bg-st-accepted text-white hover:bg-st-accepted/90 disabled:opacity-50",
+  primary:
+    "bg-cobalt text-black font-semibold shadow-[3px_3px_0_0_rgb(0_253_255/0.28)] hover:bg-white hover:shadow-[3px_3px_0_0_rgb(255_255_255/0.25)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:bg-cobalt/40 disabled:shadow-none",
+  secondary:
+    "bg-black/40 text-ink border border-line-strong hover:border-cobalt hover:text-cobalt disabled:opacity-50",
+  ghost: "text-ink-2 hover:bg-cobalt/10 hover:text-cobalt disabled:opacity-50",
+  danger: "bg-black/40 text-st-revision border border-st-revision/50 hover:bg-st-revision-bg disabled:opacity-50",
+  success: "bg-st-accepted text-black font-semibold hover:bg-st-accepted/85 disabled:opacity-50",
 };
 const sizeClass: Record<Size, string> = {
-  sm: "h-8 px-3 text-sm gap-1.5",
-  md: "h-10 px-4 text-[15px] gap-2",
-  lg: "h-12 px-5 text-base gap-2",
+  sm: "h-8 px-3 text-[13px] gap-1.5",
+  md: "h-10 px-4 text-[14px] gap-2",
+  lg: "h-12 px-5 text-[15px] gap-2",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-[var(--radius-control)] font-medium transition-colors select-none whitespace-nowrap disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center font-medium transition-colors select-none whitespace-nowrap disabled:cursor-not-allowed",
     variantClass[variant],
     sizeClass[size],
     extra,
@@ -52,7 +54,7 @@ export function LinkButton({
 }
 
 const fieldClass =
-  "w-full rounded-[var(--radius-control)] border border-line-strong bg-surface px-3 text-[15px] text-ink placeholder:text-muted focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/20";
+  "w-full border border-line-strong bg-black/60 px-3 text-[14px] text-ink placeholder:text-muted focus:border-cobalt focus:outline-none focus:ring-2 focus:ring-cobalt/20";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cn(fieldClass, "h-10", className)} {...props} />;
@@ -69,7 +71,10 @@ export function Select({ className, ...props }: ComponentProps<"select">) {
 export function Field({ label, hint, children, htmlFor }: { label: string; hint?: string; children: ReactNode; htmlFor?: string }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-ink">
+      <label htmlFor={htmlFor} className="block text-[13px] font-medium text-ink-2">
+        <span className="text-cobalt" aria-hidden>
+          ${" "}
+        </span>
         {label}
       </label>
       {children}
@@ -79,15 +84,16 @@ export function Field({ label, hint, children, htmlFor }: { label: string; hint?
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-[var(--radius-card)] bg-surface border border-line", className)} {...props} />;
+  return <div className={cn("border border-line bg-surface backdrop-blur-[2px]", className)} {...props} />;
 }
 
+/** Pixel title with a blinking cursor — the signature element of the interface. */
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[26px]">{title}</h1>
-        {subtitle ? <div className="mt-1.5 text-[15px] text-ink-2">{subtitle}</div> : null}
+        <h1 className="cursor glow font-display text-[15px] leading-[1.7] text-cobalt sm:text-[19px]">{title}</h1>
+        {subtitle ? <div className="mt-2 text-[14px] text-ink-2">{subtitle}</div> : null}
       </div>
       {action ? <div className="flex shrink-0 gap-2">{action}</div> : null}
     </div>
@@ -97,7 +103,12 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-[17px] font-semibold text-ink">{children}</h2>
+      <h2 className="text-[15px] font-semibold text-ink">
+        <span className="text-muted" aria-hidden>
+          {"// "}
+        </span>
+        {children}
+      </h2>
       {action}
     </div>
   );
@@ -105,7 +116,7 @@ export function SectionTitle({ children, action }: { children: ReactNode; action
 
 export function EmptyState({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface/60 px-6 py-10 text-center">
+    <div className="border border-dashed border-line-strong bg-black/50 px-6 py-10 text-center">
       <p className="font-medium text-ink">{title}</p>
       {text ? <p className="mx-auto mt-1 max-w-md text-sm text-ink-2">{text}</p> : null}
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
@@ -130,15 +141,14 @@ const statusText: Record<SubmissionStatus | "todo", string> = {
 
 export function StatusBadge({ status, className }: { status: SubmissionStatus | "todo"; className?: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium",
-        statusStyles[status],
-        className,
-      )}
-    >
-      <span className="size-1.5 rounded-full bg-current" aria-hidden />
-      {statusText[status]}
+    <span className={cn("inline-flex h-6 shrink-0 items-center px-2 text-[12px] font-semibold tracking-wide", statusStyles[status], className)}>
+      <span aria-hidden className="opacity-60">
+        [
+      </span>
+      <span className="px-1">{statusText[status]}</span>
+      <span aria-hidden className="opacity-60">
+        ]
+      </span>
     </span>
   );
 }
@@ -147,28 +157,24 @@ export function Badge({ children, tone = "neutral", className }: { children: Rea
   const tones = {
     neutral: "bg-st-todo-bg text-ink-2",
     cobalt: "bg-cobalt-soft text-cobalt",
-    mark: "bg-mark text-ink",
+    mark: "bg-mark text-black",
     danger: "bg-st-revision-bg text-st-revision",
     success: "bg-st-accepted-bg text-st-accepted",
     warn: "bg-st-review-bg text-st-review",
   } as const;
-  return (
-    <span className={cn("inline-flex h-6 items-center rounded-full px-2.5 text-[13px] font-medium", tones[tone], className)}>
-      {children}
-    </span>
-  );
+  return <span className={cn("inline-flex h-6 items-center px-2 text-[12px] font-semibold", tones[tone], className)}>{children}</span>;
 }
 
-const avatarColors = ["#2945c7", "#19794b", "#9a6213", "#b93a26", "#6a3fb5", "#0f6f86"];
+const avatarColors = ["#00fdff", "#3dfc8a", "#ffc94d", "#ff6a5f", "#c58bff", "#5cc8ff"];
 
 export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const bg = avatarColors[h % avatarColors.length];
+  const color = avatarColors[h % avatarColors.length];
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.38 }}
+      className="inline-flex shrink-0 items-center justify-center border font-display"
+      style={{ width: size, height: size, color, borderColor: color, background: `${color}1f`, fontSize: Math.max(8, size * 0.26) }}
       aria-hidden
     >
       {initials(name) || "?"}
@@ -176,52 +182,48 @@ export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   );
 }
 
+/** Segmented, pixel-style progress bar. */
 export function ProgressBar({ value, className }: { value: number; className?: string }) {
+  const v = Math.min(100, Math.max(0, value));
   return (
-    <div
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-line", className)}
-      role="progressbar"
-      aria-valuenow={value}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className="h-full rounded-full bg-cobalt transition-[width]" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    <div className={cn("h-3 w-full border border-line-strong bg-black/60 p-[2px]", className)} role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100}>
+      <div
+        className="h-full transition-[width]"
+        style={{ width: `${v}%`, background: "repeating-linear-gradient(90deg, var(--color-cobalt) 0 6px, transparent 6px 8px)" }}
+      />
     </div>
   );
 }
 
-export function ProgressRing({ value, size = 76 }: { value: number; size?: number }) {
-  const stroke = 7;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
+/** Big terminal progress readout: [██████░░░░] 60% */
+export function ProgressRing({ value }: { value: number; size?: number }) {
+  const v = Math.min(100, Math.max(0, value));
+  const cells = 16;
+  const filled = Math.round((v / 100) * cells);
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="var(--color-cobalt)"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c - (c * Math.min(100, value)) / 100}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[17px] font-semibold tabular-nums text-ink">
-        {value}%
-      </span>
+    <div className="shrink-0" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100}>
+      <p className="glow font-display text-[22px] leading-none text-cobalt">{v}%</p>
+      <p className="mt-3 whitespace-pre font-mono text-[15px] leading-none tracking-[-0.05em] text-cobalt" aria-hidden>
+        [{"█".repeat(filled)}
+        <span className="text-line-strong">{"░".repeat(cells - filled)}</span>]
+      </p>
     </div>
   );
 }
 
 export function Notice({ tone = "info", children }: { tone?: "info" | "success" | "error"; children: ReactNode }) {
   const tones = {
-    info: "bg-cobalt-soft text-cobalt-dark",
-    success: "bg-st-accepted-bg text-st-accepted",
-    error: "bg-st-revision-bg text-st-revision",
+    info: "border-cobalt/40 bg-cobalt-soft text-cobalt",
+    success: "border-st-accepted/40 bg-st-accepted-bg text-st-accepted",
+    error: "border-st-revision/40 bg-st-revision-bg text-st-revision",
   } as const;
-  return <div className={cn("rounded-[var(--radius-control)] px-3.5 py-2.5 text-sm", tones[tone])}>{children}</div>;
+  const prefix = { info: "i", success: "✓", error: "!" }[tone];
+  return (
+    <div className={cn("flex gap-2 border px-3.5 py-2.5 text-sm", tones[tone])}>
+      <span aria-hidden className="font-semibold">
+        [{prefix}]
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
 }

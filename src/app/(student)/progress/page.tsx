@@ -3,6 +3,7 @@ import { Check, CheckCircle2, Circle, ClipboardList, PlayCircle, Sparkles } from
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, computeProgress, getCourseTree, getStudentState } from "@/lib/course";
 import { EmptyState, PageHeader, ProgressBar, StatusBadge, cn } from "@/components/ui";
+import { lessonLabel } from "@/lib/format";
 
 export const metadata = { title: "Прогресс" };
 
@@ -33,7 +34,7 @@ export default async function ProgressPage() {
                   className={cn(
                     "absolute left-0 top-0.5 flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold",
                     mp.complete
-                      ? "border-cobalt bg-cobalt text-white"
+                      ? "border-cobalt bg-cobalt text-black"
                       : mp.done > 0
                         ? "border-cobalt bg-surface text-cobalt"
                         : "border-line-strong bg-surface text-muted",
@@ -49,7 +50,7 @@ export default async function ProgressPage() {
                 {mp.module.description ? <p className="mt-1 text-sm text-ink-2">{mp.module.description}</p> : null}
 
                 <ul className="mt-3 space-y-1.5">
-                  {mp.module.lessons.map((l) => {
+                  {mp.module.lessons.map((l, li) => {
                     const done = state.completed.has(l.id);
                     return (
                       <li key={l.id}>
@@ -60,7 +61,7 @@ export default async function ProgressPage() {
                             <Circle className="size-[18px] shrink-0 text-line-strong" aria-label="Не пройден" />
                           )}
                           <PlayCircle className="size-4 shrink-0 text-muted" aria-hidden />
-                          <span className={cn("min-w-0 truncate", done ? "text-ink-2" : "text-ink")}>{l.title}</span>
+                          <span className={cn("min-w-0 truncate", done ? "text-ink-2" : "text-ink")}>{lessonLabel(l.title, mp.module.title, li, mp.module.lessons.length)}</span>
                         </Link>
                       </li>
                     );
@@ -84,7 +85,7 @@ export default async function ProgressPage() {
                   })}
                 </ul>
                 {mp.surveyAvailable ? (
-                  <Link href={`/survey/${mp.module.id}`} className="mt-3 inline-flex items-center gap-2 rounded-full bg-mark px-3 py-1.5 text-sm font-medium text-ink">
+                  <Link href={`/survey/${mp.module.id}`} className="mt-3 inline-flex items-center gap-2 rounded-full bg-mark px-3 py-1.5 text-sm font-medium text-black">
                     <Sparkles className="size-4" aria-hidden /> Оценить модуль
                   </Link>
                 ) : mp.surveyDone ? (

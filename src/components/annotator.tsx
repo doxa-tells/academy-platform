@@ -86,7 +86,7 @@ export function Annotator({
     <dialog
       ref={dialog}
       onClose={onClose}
-      className="m-0 size-full max-h-none max-w-none bg-ink/95 p-0 backdrop:bg-ink/80"
+      className="m-0 size-full max-h-none max-w-none bg-black/95 p-0 backdrop:bg-black/85"
       aria-label="Пометки на фото"
     >
       <div className="flex h-full flex-col">
@@ -95,14 +95,14 @@ export function Annotator({
             <button
               type="button"
               onClick={() => setTool("pen")}
-              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm", tool === "pen" && "bg-white text-ink")}
+              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm", tool === "pen" && "bg-white text-black")}
             >
               <PenLine className="size-4" aria-hidden /> Рисовать
             </button>
             <button
               type="button"
               onClick={() => setTool("pin")}
-              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm", tool === "pin" && "bg-white text-ink")}
+              className={cn("flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm", tool === "pin" && "bg-white text-black")}
             >
               <MapPin className="size-4" aria-hidden /> Метка с номером
             </button>

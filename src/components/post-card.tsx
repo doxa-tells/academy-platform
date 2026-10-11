@@ -44,7 +44,7 @@ export function PostCard({
           </span>
         ) : null}
         {personal ? <span className="rounded-full bg-cobalt-soft px-2 py-0.5 text-cobalt">лично тебе</span> : null}
-        {unread ? <span className="rounded-full bg-mark px-2 py-0.5 font-medium text-ink">новое</span> : null}
+        {unread ? <span className="rounded-full bg-mark px-2 py-0.5 font-medium text-black">новое</span> : null}
       </div>
       <h3 className="text-[17px] font-semibold leading-snug text-ink">
         <span className={unread ? "mark" : undefined}>{post.title}</span>

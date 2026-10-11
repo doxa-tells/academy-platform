@@ -21,7 +21,7 @@ export function LessonDoneButton({ lessonId, done: initial }: { lessonId: string
       }
       className={cn(
         "inline-flex h-11 items-center gap-2 rounded-[var(--radius-control)] px-4 text-[15px] font-medium transition-colors",
-        done ? "bg-st-accepted-bg text-st-accepted" : "bg-cobalt text-white hover:bg-cobalt-dark",
+        done ? "bg-st-accepted-bg text-st-accepted" : "bg-cobalt text-black hover:bg-cobalt-dark",
       )}
       aria-pressed={done}
     >

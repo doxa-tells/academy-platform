@@ -45,7 +45,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Avatar name={student.name} size={40} />
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-[20px] font-semibold leading-tight text-ink sm:text-[24px]">{assignment.title}</h1>
+            <h1 className="glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[15px]">{assignment.title}</h1>
             <p className="text-sm text-ink-2">{student.name}</p>
           </div>
           <StatusBadge status={submission.status} />

@@ -1,89 +1,157 @@
 @import "tailwindcss";
 
+/* Self-hosted fonts (OFL licenses in /public/fonts) */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("/fonts/PressStart2P-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Code Pro";
+  src: url("/fonts/SourceCodePro-VariableFont_wght.ttf") format("truetype");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: "Onest Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Unbounded Variable", "Onest Variable", ui-sans-serif, sans-serif;
+  --font-sans: "Source Code Pro", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-mono: "Source Code Pro", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: "Press Start 2P", "Source Code Pro", ui-monospace, monospace;
 
-  --color-paper: #f3f4f7;
-  --color-surface: #ffffff;
-  --color-ink: #172033;
-  --color-ink-2: #465068;
-  --color-muted: #7a8296;
-  --color-line: #e1e4ea;
-  --color-line-strong: #c9ced8;
+  /* Terminal palette: black + the logo's neon cyan */
+  --color-paper: rgb(0 253 255 / 0.045);
+  --color-surface: rgb(4 9 11 / 0.86);
+  --color-ink: #e2f4f3;
+  --color-ink-2: #9fb8b6;
+  --color-muted: #648280;
+  --color-line: #173336;
+  --color-line-strong: #285a5c;
 
-  --color-cobalt: #2945c7;
-  --color-cobalt-dark: #1f35a0;
-  --color-cobalt-soft: #e8ecfb;
+  --color-cobalt: #00fdff;
+  --color-cobalt-dark: #00c8ca;
+  --color-cobalt-soft: rgb(0 253 255 / 0.1);
 
-  --color-mark: #ffe35a;
-  --color-mark-soft: #fff6c2;
+  --color-mark: #ffd23f;
+  --color-mark-soft: rgb(255 210 63 / 0.1);
 
-  --color-st-submitted: #2945c7;
-  --color-st-submitted-bg: #e8ecfb;
-  --color-st-review: #9a6213;
-  --color-st-review-bg: #fcf1dc;
-  --color-st-revision: #b93a26;
-  --color-st-revision-bg: #fbe7e2;
-  --color-st-accepted: #19794b;
-  --color-st-accepted-bg: #e1f3e8;
-  --color-st-todo: #5f677a;
-  --color-st-todo-bg: #eceef2;
+  --color-st-submitted: #5cc8ff;
+  --color-st-submitted-bg: rgb(92 200 255 / 0.12);
+  --color-st-review: #ffc94d;
+  --color-st-review-bg: rgb(255 201 77 / 0.12);
+  --color-st-revision: #ff6a5f;
+  --color-st-revision-bg: rgb(255 106 95 / 0.13);
+  --color-st-accepted: #3dfc8a;
+  --color-st-accepted-bg: rgb(61 252 138 / 0.11);
+  --color-st-todo: #8aa3a1;
+  --color-st-todo-bg: rgb(138 163 161 / 0.12);
 
-  --radius-card: 14px;
-  --radius-control: 10px;
+  --radius-card: 0px;
+  --radius-control: 0px;
 }
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    background: #000;
+    color-scheme: dark;
   }
   body {
-    background: var(--color-paper);
+    background: transparent;
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
+    caret-color: var(--color-cobalt);
+  }
+  /* Darkened screenshot backdrop + CRT scanlines, fixed behind everything */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: url("/bg.jpg") center / cover no-repeat;
+    opacity: 0.5;
+    filter: blur(1.5px) saturate(0.85);
+    pointer-events: none;
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      repeating-linear-gradient(0deg, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 35%, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0.88) 75%);
+    pointer-events: none;
+  }
+  /* Pixel aesthetic: hard corners everywhere */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
   }
   :focus-visible {
     outline: 2px solid var(--color-cobalt);
     outline-offset: 2px;
   }
   ::selection {
-    background: var(--color-mark);
-    color: var(--color-ink);
+    background: var(--color-cobalt);
+    color: #000;
+  }
+  ::placeholder {
+    color: var(--color-muted);
+  }
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) sepia(1) hue-rotate(130deg) saturate(4);
   }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
   }
 }
 
-/* Highlighter swash used for unread / new items — the one decorative device. */
+/* Unread / new: inverse video, like a terminal selection */
 .mark {
-  background-image: linear-gradient(
-    100deg,
-    transparent 0.4em,
-    var(--color-mark) 0.55em,
-    var(--color-mark) calc(100% - 0.4em),
-    transparent calc(100% - 0.2em)
-  );
-  background-size: 100% 0.62em;
-  background-repeat: no-repeat;
-  background-position: 0 88%;
-  padding: 0 0.15em;
-  margin: 0 -0.15em;
+  background: var(--color-mark);
+  color: #000;
+  padding: 0 0.3em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
 
+/* Blinking block cursor after page titles */
+.cursor::after {
+  content: "";
+  display: inline-block;
+  width: 0.62em;
+  height: 0.95em;
+  margin-left: 0.35em;
+  vertical-align: -0.08em;
+  background: var(--color-cobalt);
+  animation: blink 1.05s steps(1, end) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Soft neon glow for pixel headings */
+.glow {
+  text-shadow: 0 0 12px rgb(0 253 255 / 0.35);
+}
+
 /* Markdown content */
 .prose-academy {
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--color-ink-2);
 }
 .prose-academy > * + * {
@@ -94,35 +162,43 @@
 .prose-academy h3 {
   color: var(--color-ink);
   font-weight: 650;
-  line-height: 1.3;
+  line-height: 1.35;
   margin-top: 1.2em;
 }
-.prose-academy h1 { font-size: 1.25rem; }
-.prose-academy h2 { font-size: 1.125rem; }
+.prose-academy h1 { font-size: 1.2rem; }
+.prose-academy h2 { font-size: 1.08rem; }
 .prose-academy h3 { font-size: 1rem; }
 .prose-academy a {
   color: var(--color-cobalt);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
   word-break: break-word;
 }
 .prose-academy strong { color: var(--color-ink); font-weight: 650; }
-.prose-academy ul { list-style: disc; padding-left: 1.25em; }
-.prose-academy ol { list-style: decimal; padding-left: 1.25em; }
-.prose-academy li + li { margin-top: 0.25em; }
+.prose-academy ul { list-style: none; padding-left: 1.4em; }
+.prose-academy ul > li { position: relative; }
+.prose-academy ul > li::before {
+  content: ">";
+  position: absolute;
+  left: -1.3em;
+  color: var(--color-cobalt);
+}
+.prose-academy ol { list-style: decimal; padding-left: 1.4em; }
+.prose-academy li + li { margin-top: 0.3em; }
 .prose-academy blockquote {
   border-left: 3px solid var(--color-mark);
   padding-left: 0.9em;
   color: var(--color-ink);
 }
 .prose-academy code {
-  font-size: 0.9em;
-  background: var(--color-paper);
-  border-radius: 6px;
+  font-size: 0.92em;
+  background: rgb(0 253 255 / 0.08);
+  color: var(--color-cobalt);
   padding: 0.1em 0.35em;
 }
 .prose-academy pre code {
   background: none;
+  color: inherit;
   padding: 0;
 }
 .prose-academy table { width: 100%; border-collapse: collapse; font-size: 0.95em; }

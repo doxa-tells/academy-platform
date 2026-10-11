@@ -126,7 +126,7 @@ export function UploadPicker({
                 </div>
               )}
               {it.status === "uploading" ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-ink/45 text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/45 text-white">
                   <Loader2 className="size-5 animate-spin" aria-hidden />
                   <span className="text-sm font-semibold tabular-nums">{it.progress}%</span>
                 </div>
@@ -140,7 +140,7 @@ export function UploadPicker({
               <button
                 type="button"
                 onClick={() => uploader.remove(it.id)}
-                className="absolute right-1 top-1 rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
+                className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white hover:bg-black"
                 aria-label={`Убрать ${it.name}`}
               >
                 <X className="size-3.5" />
