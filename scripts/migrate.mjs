@@ -156,6 +156,25 @@ if (process.env.SEED_PROGRAM !== "0") {
   }
 }
 
+// ---- one-time wording fix: «Домашки» → «Домашние задания» in content already in the DB ----
+{
+  const [done] = await rows(sql`select value from settings where key = 'rename_domashki_v1'`);
+  if (!done) {
+    const fix = (col) => sql`replace(replace(${sql.raw(col)}, 'Домашки', 'Домашние задания'), 'домашки', 'домашние задания')`;
+    const hit = (col) => sql`${sql.raw(col)} like '%омашки%'`;
+    await db.execute(sql`update posts set title = ${fix("title")}, body = ${fix("body")} where ${hit("title")} or ${hit("body")}`);
+    for (const table of ["modules", "lessons", "assignments"]) {
+      await db.execute(
+        sql`update ${sql.raw(table)} set title = ${fix("title")}, description = ${fix("description")}
+            where ${hit("title")} or ${hit("description")}`,
+      );
+    }
+    await db.execute(sql`insert into settings (key, value) values ('rename_domashki_v1', ${new Date().toISOString()})
+                         on conflict (key) do nothing`);
+    console.log("[seed] «Домашки» renamed in existing content");
+  }
+}
+
 // ---- lesson video links from course-program.mjs ----
 // Fills a lesson's video only if it's empty or still holds the link set here earlier,
 // so links edited in the admin panel are never overwritten.
