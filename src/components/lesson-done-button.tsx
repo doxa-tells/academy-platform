@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, Loader2 } from "@/components/icons";
 import { toggleLessonComplete } from "@/app/(student)/actions";
 import { cn } from "./ui";
 

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
-  const name = process.env.NEXT_PUBLIC_APP_NAME || "Академия";
+  const name = process.env.NEXT_PUBLIC_APP_NAME || "MetaFrame Academy";
   return {
     name,
     short_name: name,

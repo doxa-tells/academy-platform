@@ -1,5 +1,5 @@
 import { and, asc, desc, eq } from "drizzle-orm";
-import { Pin, PinOff } from "lucide-react";
+import { Pin, PinOff } from "@/components/icons";
 import { ConfirmButton } from "@/components/action-form";
 import { db, schema } from "@/lib/db";
 import { PostCard } from "@/components/post-card";

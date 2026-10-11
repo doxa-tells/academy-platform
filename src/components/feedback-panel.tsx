@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { CheckCircle2, Loader2, MessageSquare, PenLine, RotateCcw } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, PenLine, RotateCcw } from "@/components/icons";
 import { sendFeedback, type ActionState } from "@/app/admin/actions";
 import type { AnnotationData, SubmissionStatus } from "@/lib/db/schema";
 import { Annotator } from "./annotator";

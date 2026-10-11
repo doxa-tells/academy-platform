@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MapPin, PenLine, Trash2, Undo2, X } from "lucide-react";
+import { MapPin, PenLine, Trash2, Undo2, X } from "@/components/icons";
 import type { AnnotationData } from "@/lib/db/schema";
 import { AnnotationOverlay, AnnotationPins } from "./attachments";
 import { Button, cn } from "./ui";

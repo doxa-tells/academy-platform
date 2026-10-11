@@ -1,4 +1,4 @@
-import { ExternalLink, Megaphone, Pin, Sparkle, StickyNote, Link2 } from "lucide-react";
+import { ExternalLink, Megaphone, Pin, Sparkle, StickyNote, Link2 } from "@/components/icons";
 import { Markdown, PromptBlock } from "./markdown";
 import { formatShort } from "@/lib/format";
 import type { Post } from "@/lib/db/schema";

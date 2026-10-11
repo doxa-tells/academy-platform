@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ClipboardList } from "lucide-react";
+import { ArrowLeft, ArrowRight, ClipboardList } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, getCourseTree, getStudentState } from "@/lib/course";
 import { VideoEmbed } from "@/components/video-embed";
 import { Markdown } from "@/components/markdown";
 import { LessonDoneButton } from "@/components/lesson-done-button";
 import { StatusBadge } from "@/components/ui";
+import { LessonArt } from "@/components/lesson-art";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,11 +23,14 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
 
   return (
     <article className="space-y-6">
-      <div>
-        <Link href="/lessons" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
-          <ArrowLeft className="size-4" aria-hidden /> {mod.title}
-        </Link>
-        <h1 className="cursor glow mt-3 font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{lesson.title}</h1>
+      <div className="flex items-start gap-5">
+        <div className="min-w-0 flex-1">
+          <Link href="/lessons" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+            <ArrowLeft className="size-4" aria-hidden /> {mod.title}
+          </Link>
+          <h1 className="cursor glow mt-3 font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{lesson.title}</h1>
+        </div>
+        <LessonArt title={mod.title} index={tree.indexOf(mod)} className="hidden sm:block" />
       </div>
 
       <VideoEmbed url={lesson.videoUrl} title={lesson.title} />

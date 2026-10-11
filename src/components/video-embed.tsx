@@ -1,4 +1,4 @@
-import { PlayCircle } from "lucide-react";
+import { PlayCircle } from "@/components/icons";
 
 type Embed = { type: "iframe"; src: string } | { type: "video"; src: string } | null;
 

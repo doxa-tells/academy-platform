@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
-import { Clock, Paperclip } from "lucide-react";
+import { Clock, Paperclip } from "@/components/icons";
 import { db, schema } from "@/lib/db";
 import { getReviewQueue } from "@/lib/review-queue";
 import { timeAgo } from "@/lib/format";
 import type { SubmissionStatus } from "@/lib/db/schema";
 import { Avatar, EmptyState, PageHeader, StatusBadge, cn } from "@/components/ui";
 
-export const metadata = { title: "Домашки" };
+export const metadata = { title: "Домашние задания" };
 
 const TABS: { key: string; label: string; statuses: SubmissionStatus[] | null }[] = [
   { key: "new", label: "Ждут проверки", statuses: ["submitted", "in_review"] },
@@ -28,7 +28,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <PageHeader title="Домашки" subtitle={studentName ? `Работы студента: ${studentName}` : "Очередь проверки"} />
+      <PageHeader title="Домашние задания" subtitle={studentName ? `Работы студента: ${studentName}` : "Очередь проверки"} />
       <div className="mb-3 flex gap-1 overflow-x-auto rounded-[var(--radius-control)] bg-surface p-1 ring-1 ring-line" role="tablist">
         {TABS.map((t) => (
           <Link

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { reconnectBot, saveBotToken, sendTestMessage, type ActionState } from "@/app/admin/actions";
 import { Button, Field, Input, Notice } from "./ui";
 

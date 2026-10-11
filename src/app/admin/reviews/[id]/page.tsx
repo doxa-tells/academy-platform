@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { ArrowLeft, CalendarClock } from "lucide-react";
+import { ArrowLeft, CalendarClock } from "@/components/icons";
 import { db, schema } from "@/lib/db";
 import { getThread } from "@/lib/homework";
 import { formatDateTime } from "@/lib/format";

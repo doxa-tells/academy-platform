@@ -13,3 +13,9 @@ tests/artifacts
 /logo.PNG
 /Снимок*
 /fonts*
+
+# lesson source files (recordings are hosted on YouTube)
+/*.webm
+/*.mp4
+/* урок *
+/материалы уроков/

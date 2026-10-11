@@ -3,8 +3,9 @@ import { requireStudent } from "@/lib/auth";
 import { assignmentState, getCourseTree, getStudentState } from "@/lib/course";
 import { deadlineLabel, formatDateTime } from "@/lib/format";
 import { EmptyState, PageHeader, StatusBadge, cn } from "@/components/ui";
+import { LessonArt } from "@/components/lesson-art";
 
-export const metadata = { title: "Домашки" };
+export const metadata = { title: "Домашние задания" };
 
 export default async function HomeworkList() {
   const user = await requireStudent();
@@ -21,7 +22,10 @@ export default async function HomeworkList() {
         <div className="space-y-8">
           {modules.map((m) => (
             <section key={m.id}>
-              <h2 className="mb-3 text-[17px] font-semibold text-ink">{m.title}</h2>
+              <div className="mb-3 flex items-center gap-3">
+                <LessonArt title={m.title} index={tree.indexOf(m)} size="sm" />
+                <h2 className="text-[16px] font-semibold leading-snug text-ink">{m.title}</h2>
+              </div>
               <ul className="space-y-2">
                 {m.assignments.map((a) => {
                   const st = assignmentState(a, state.submissions.get(a.id), now);

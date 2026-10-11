@@ -6,6 +6,7 @@ const list = (items) => items.map((i) => `- ${i}`).join("\n");
 export const PROGRAM = [
   {
     title: "Основы промпт-инжиниринга и фото/видео моделей",
+    video: "https://youtu.be/F5k22pOf_Ec",
     learn: [
       "что такое Higgsfield",
       "какие модели сейчас самые актуальные",
@@ -107,6 +108,7 @@ export const PROGRAM = [
 ].map((l, i) => ({
   moduleTitle: `Урок ${i + 1}. ${l.title}`,
   lessonTitle: l.title,
+  videoUrl: l.video || "",
   lessonDescription: `**Что ты узнаешь на уроке:**\n\n${list(l.learn)}`,
   assignmentTitle: l.hwTitle,
   assignmentDescription: `${list(l.homework)}\n\nЗагрузи результат сюда: фото, видео или ссылку в комментарии.`,

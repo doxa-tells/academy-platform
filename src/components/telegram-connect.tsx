@@ -1,4 +1,4 @@
-import { BellRing, CheckCircle2, Send } from "lucide-react";
+import { BellRing, CheckCircle2, Telegram } from "@/components/icons";
 import { disconnectTelegram } from "@/app/account-actions";
 import { Button, buttonClass } from "./ui";
 
@@ -47,11 +47,11 @@ export function TelegramConnect({
     <div className="space-y-3">
       <p className="text-[15px] text-ink-2">
         {audience === "admin"
-          ? "Нажми кнопку, в Telegram откроется бот — нажми «Start». Сюда будут приходить новые домашки и сводка за день."
-          : "Нажми кнопку, в Telegram откроется бот — нажми «Start». Пришлю разбор домашки, новые посты и напомню о дедлайнах."}
+          ? "Нажми кнопку, в Telegram откроется бот — нажми «Start». Сюда будут приходить новые домашние задания и сводка за день."
+          : "Нажми кнопку, в Telegram откроется бот — нажми «Start». Пришлю разбор домашних заданий, новые посты и напомню о дедлайнах."}
       </p>
       <a href={link} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "md")} data-testid="telegram-link">
-        <Send className="size-4" aria-hidden /> Подключить Telegram
+        <Telegram className="size-4" aria-hidden /> Подключить Telegram
       </a>
     </div>
   );

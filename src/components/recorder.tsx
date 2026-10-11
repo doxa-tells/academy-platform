@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Mic, Square, Video, X } from "lucide-react";
+import { Mic, Square, Video, X } from "@/components/icons";
 import { Button, cn } from "./ui";
 
 type Mode = "audio" | "video";

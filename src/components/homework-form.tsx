@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send } from "@/components/icons";
 import { submitAttempt, type FormState } from "@/app/(student)/actions";
 import { UploadPicker, useUploader } from "./uploader";
 import { Button, Notice, Textarea } from "./ui";

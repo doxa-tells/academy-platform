@@ -68,7 +68,7 @@ export async function submitAttempt(_prev: FormState, form: FormData): Promise<F
 
   after(() =>
     notifyAdmins(
-      `${isResubmit ? "🔁 <b>Доработка</b>" : "📥 <b>Новая домашка</b>"}\n${escapeHtml(user.name)} — ${escapeHtml(assignment.title)}` +
+      `${isResubmit ? "🔁 <b>Доработка</b>" : "📥 <b>Новое домашнее задание</b>"}\n${escapeHtml(user.name)} — ${escapeHtml(assignment.title)}` +
         (files.length ? `\nФайлов: ${files.length}` : "") +
         (text ? `\n\n«${escapeHtml(text.slice(0, 300))}${text.length > 300 ? "…" : ""}»` : ""),
       { path: `/admin/reviews/${submissionId}`, label: "Открыть работу" },

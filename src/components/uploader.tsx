@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { FileAudio, FileVideo, ImagePlus, Loader2, X, AlertCircle } from "lucide-react";
+import { FileAudio, FileVideo, ImagePlus, Loader2, X, AlertCircle } from "@/components/icons";
 import { uploadFile, kindOf, type Uploaded } from "@/lib/upload-client";
 import { MAX_UPLOAD_MB } from "@/lib/config";
 import { cn } from "./ui";

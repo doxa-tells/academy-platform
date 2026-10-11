@@ -106,7 +106,7 @@ if (moduleCount === 0 && adminCount > 0 && process.env.SEED_DEMO !== "0") {
   await rows(sql`
     insert into posts (author_id, kind, title, body, audience, pinned)
     values (${admin.id}, 'announcement', 'Добро пожаловать на курс!',
-      ${"Здесь будут появляться заметки, промпты и важные объявления.\n\nНачни с раздела **Уроки**, а первое задание загрузи в **Домашки**. Подключи Telegram в профиле, чтобы не пропускать новости."},
+      ${"Здесь будут появляться заметки, промпты и важные объявления.\n\nНачни с раздела **Уроки**, а первое задание загрузи в **Домашние задания**. Подключи Telegram в профиле, чтобы не пропускать новости."},
       'all', true)`);
   await rows(sql`
     insert into posts (author_id, kind, title, body, audience, pinned)
@@ -142,7 +142,7 @@ if (process.env.SEED_PROGRAM !== "0") {
           values (${p.moduleTitle}, '', ${position++}) returning id`);
         const [lesson] = await rows(sql`
           insert into lessons (module_id, title, description, video_url, position)
-          values (${mod.id}, ${p.lessonTitle}, ${p.lessonDescription}, '', 0) returning id`);
+          values (${mod.id}, ${p.lessonTitle}, ${p.lessonDescription}, ${p.videoUrl}, 0) returning id`);
         await db.execute(sql`
           insert into assignments (module_id, lesson_id, title, description, position)
           values (${mod.id}, ${lesson.id}, ${p.assignmentTitle}, ${p.assignmentDescription}, 0)`);
@@ -153,6 +153,29 @@ if (process.env.SEED_PROGRAM !== "0") {
     }
     await db.execute(sql`insert into settings (key, value) values ('course_program_v1', ${new Date().toISOString()})
                          on conflict (key) do nothing`);
+  }
+}
+
+// ---- lesson video links from course-program.mjs ----
+// Fills a lesson's video only if it's empty or still holds the link set here earlier,
+// so links edited in the admin panel are never overwritten.
+if (process.env.SEED_PROGRAM !== "0") {
+  const { PROGRAM } = await import("./course-program.mjs");
+  for (const [i, p] of PROGRAM.entries()) {
+    if (!p.videoUrl) continue;
+    const key = `lesson_video_${i + 1}`;
+    const [prev] = await rows(sql`select value from settings where key = ${key}`);
+    if (prev?.value === p.videoUrl) continue;
+    const [lesson] = await rows(sql`
+      select l.id, l.video_url from lessons l join modules m on m.id = l.module_id
+      where m.title like ${`Урок ${i + 1}.%`} order by l.position, l.created_at limit 1`);
+    if (!lesson) continue;
+    if (!lesson.video_url || lesson.video_url === prev?.value) {
+      await db.execute(sql`update lessons set video_url = ${p.videoUrl} where id = ${lesson.id}`);
+      console.log(`[seed] video set for lesson ${i + 1}`);
+    }
+    await db.execute(sql`insert into settings (key, value) values (${key}, ${p.videoUrl})
+                         on conflict (key) do update set value = excluded.value, updated_at = now()`);
   }
 }
 

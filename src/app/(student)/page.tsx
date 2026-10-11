@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarClock, MessageCircleWarning, Sparkles } from "lucide-react";
+import { ArrowRight, BellRing, CalendarClock, MessageCircleWarning, Sparkles } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, computeProgress, getCourseTree, getPostsForStudent, getStudentState } from "@/lib/course";
 import { getBotUsername } from "@/lib/telegram";
@@ -146,7 +146,7 @@ export default async function StudentHome() {
           <BellRing className="size-6 shrink-0 text-cobalt" aria-hidden />
           <div className="flex-1">
             <p className="font-medium text-ink">Подключи уведомления в Telegram</p>
-            <p className="text-sm text-ink-2">Сообщу о разборе домашки, новых постах и дедлайнах.</p>
+            <p className="text-sm text-ink-2">Сообщу о разборе домашних заданий, новых постах и дедлайнах.</p>
           </div>
           <LinkButton href="/profile" variant="secondary">
             Подключить

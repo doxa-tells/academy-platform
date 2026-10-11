@@ -329,7 +329,7 @@ await step("Студент сдаёт домашку: фото + видео + к
   await s1.page.waitForSelector('[data-testid="thread"] img');
   assert((await s1.page.locator('[data-testid="thread"] video').count()) === 1, "видео не появилось в ленте");
   await s1.page.waitForTimeout(500);
-  assert(messagesTo(999).slice(before).some((m) => m.text.includes("Новая домашка")), "админ не получил уведомление о домашке");
+  assert(messagesTo(999).slice(before).some((m) => m.text.includes("Новое домашнее задание")), "админ не получил уведомление о домашке");
   await shot(s1.page, "09-student-homework-submitted-mobile");
 });
 

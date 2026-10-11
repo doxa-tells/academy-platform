@@ -394,7 +394,7 @@ export async function sendFeedback(_prev: ActionState, form: FormData): Promise<
     .set({ status: newStatus ?? (submission.status === "submitted" ? "in_review" : submission.status), updatedAt: new Date() })
     .where(eq(schema.submissions.id, submissionId));
 
-  const title = assignment ? escapeHtml(assignment.title) : "домашка";
+  const title = assignment ? escapeHtml(assignment.title) : "домашнее задание";
   const head =
     decision === "accepted"
       ? `✅ <b>Работа принята</b>\n${title}`

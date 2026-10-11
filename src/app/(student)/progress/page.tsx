@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Check, CheckCircle2, Circle, ClipboardList, PlayCircle, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, Circle, ClipboardList, PlayCircle, Sparkles } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, computeProgress, getCourseTree, getStudentState } from "@/lib/course";
 import { EmptyState, PageHeader, ProgressBar, StatusBadge, cn } from "@/components/ui";
 import { lessonLabel } from "@/lib/format";
+import { LessonArt } from "@/components/lesson-art";
 
 export const metadata = { title: "Прогресс" };
 
@@ -23,28 +24,25 @@ export default async function ProgressPage() {
           {progress.modules.map((mp, i) => {
             const last = i === progress.modules.length - 1;
             return (
-              <li key={mp.module.id} className="relative pb-10 pl-12 last:pb-0">
+              <li key={mp.module.id} className="relative pb-8 pl-14 last:pb-0 sm:pl-[112px]">
                 {!last ? (
                   <span
-                    className={cn("absolute left-[15px] top-9 bottom-0 w-[2px]", mp.complete ? "bg-cobalt" : "bg-line-strong")}
+                    className={cn("absolute bottom-0 left-[19px] top-11 w-[2px] sm:left-[43px] sm:top-[92px]", mp.complete ? "bg-cobalt" : "bg-line-strong")}
                     aria-hidden
                   />
                 ) : null}
-                <span
-                  className={cn(
-                    "absolute left-0 top-0.5 flex size-8 items-center justify-center rounded-full border-2 text-sm font-semibold",
-                    mp.complete
-                      ? "border-cobalt bg-cobalt text-black"
-                      : mp.done > 0
-                        ? "border-cobalt bg-surface text-cobalt"
-                        : "border-line-strong bg-surface text-muted",
-                  )}
-                  aria-hidden
-                >
-                  {mp.complete ? <Check className="size-4" strokeWidth={3} /> : i + 1}
+                <span className="absolute left-0 top-0" aria-hidden>
+                  <LessonArt title={mp.module.title} index={i} size="sm" className={cn("sm:hidden", mp.done === 0 && "opacity-75")} />
+                  <LessonArt title={mp.module.title} index={i} className={cn("hidden sm:block", mp.done === 0 && "opacity-75")} />
+                  {mp.complete ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center bg-st-accepted text-black">
+                      <Check className="size-3" />
+                    </span>
+                  ) : null}
                 </span>
+                <div className="border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h2 className="text-[17px] font-semibold text-ink">{mp.module.title}</h2>
+                  <h2 className="text-[16px] font-semibold leading-snug text-ink">{mp.module.title}</h2>
                   <span className="text-sm tabular-nums text-ink-2">{mp.percent}%</span>
                 </div>
                 {mp.module.description ? <p className="mt-1 text-sm text-ink-2">{mp.module.description}</p> : null}
@@ -91,6 +89,7 @@ export default async function ProgressPage() {
                 ) : mp.surveyDone ? (
                   <p className="mt-3 text-sm text-muted">Модуль оценён — спасибо!</p>
                 ) : null}
+                </div>
               </li>
             );
           })}

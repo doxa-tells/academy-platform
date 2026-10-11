@@ -17,11 +17,11 @@ import {
   Inbox,
   BarChart3,
   Layers,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/icons";
+import type { IconComponent } from "./icons";
 import { cn } from "./ui";
 
-type Item = { href: string; label: string; icon: LucideIcon; badge?: number; exact?: boolean };
+type Item = { href: string; label: string; icon: IconComponent; badge?: number; exact?: boolean };
 
 function isActive(pathname: string, item: Item) {
   return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
@@ -43,13 +43,13 @@ function Count({ n, tone = "mark" }: { n?: number; tone?: "mark" | "cobalt" }) {
 
 function Brand({ appName, sub }: { appName: string; sub: string }) {
   return (
-    <div className="px-4">
-      <div className="flex items-center gap-3">
-        <img src="/logo.png" alt="" className="size-10 shrink-0 drop-shadow-[0_0_10px_rgb(0_253_255/0.45)]" />
-        <p className="glow truncate font-display text-[11px] leading-none text-cobalt">{appName}</p>
+    <div className="flex items-center gap-3 px-4">
+      <img src="/logo.png" alt="" className="size-10 shrink-0 drop-shadow-[0_0_10px_rgb(0_253_255/0.45)]" />
+      {/* Two-line block centred on the logo mark */}
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p className="glow whitespace-nowrap font-display text-[11px] leading-none text-cobalt">{appName}</p>
+        <p className="truncate text-xs leading-none text-muted">{sub}</p>
       </div>
-      {/* The logo file has ~8px of empty space under the mark: tuck the name right under it */}
-      <p className="-mt-1.5 truncate pl-[52px] text-xs leading-tight text-muted">{sub}</p>
     </div>
   );
 }
@@ -75,7 +75,7 @@ function LogoutButton({ compact }: { compact?: boolean }) {
 function Sidebar({ items, appName, sub }: { items: Item[]; appName: string; sub: string }) {
   const pathname = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-black/75 py-6 backdrop-blur-sm md:flex">
+    <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-line bg-black/75 py-6 backdrop-blur-sm md:flex">
       <Brand appName={appName} sub={sub} />
       <nav className="mt-8 flex-1 space-y-0.5 px-3" aria-label="Разделы">
         {items.map((item) => {
@@ -113,7 +113,7 @@ function MobileTop({ appName }: { appName: string }) {
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-black/85 px-4 py-2.5 backdrop-blur md:hidden">
       <div className="flex items-center gap-2.5">
         <img src="/logo.png" alt="" className="size-8" />
-        <span className="glow font-display text-[11px] text-cobalt">{appName}</span>
+        <span className="glow whitespace-nowrap font-display text-[11px] text-cobalt">{appName}</span>
       </div>
       <LogoutButton compact />
     </header>
@@ -137,7 +137,7 @@ function BottomBar({ items }: { items: Item[] }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center gap-1 border-t-2 pb-2 pt-2 text-[11px] font-medium",
+                  "relative flex flex-col items-center gap-1 border-t-2 px-0.5 pb-2 pt-2 text-center text-[11px] font-medium leading-[1.15]",
                   active ? "border-cobalt text-cobalt" : "border-transparent text-muted",
                 )}
               >
@@ -162,7 +162,7 @@ export function StudentNav({ appName, name, unread, todo }: { appName: string; n
     { href: "/", label: "Главная", icon: Home, exact: true },
     { href: "/board", label: "Доска", icon: StickyNote, badge: unread },
     { href: "/lessons", label: "Уроки", icon: BookOpen },
-    { href: "/homework", label: "Домашки", icon: ClipboardList, badge: todo },
+    { href: "/homework", label: "Домашние задания", icon: ClipboardList, badge: todo },
     { href: "/progress", label: "Прогресс", icon: Route },
   ];
   const sideItems: Item[] = [...items, { href: "/profile", label: "Профиль", icon: User }];
@@ -179,7 +179,7 @@ export function StudentNav({ appName, name, unread, todo }: { appName: string; n
 export function AdminNav({ appName, name, toReview }: { appName: string; name: string; toReview: number }) {
   const items: Item[] = [
     { href: "/admin", label: "Сводка", icon: LayoutDashboard, exact: true },
-    { href: "/admin/reviews", label: "Домашки", icon: Inbox, badge: toReview },
+    { href: "/admin/reviews", label: "Домашние задания", icon: Inbox, badge: toReview },
     { href: "/admin/board", label: "Доска", icon: MessageSquareText },
     { href: "/admin/course", label: "Курс", icon: Layers },
     { href: "/admin/students", label: "Студенты", icon: Users },

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, BarChart3, CheckCircle2, Clock, Inbox, Send, Settings } from "lucide-react";
+import { AlertTriangle, ArrowRight, BarChart3, CheckCircle2, Clock, Inbox, Telegram, Settings } from "@/components/icons";
 import { getStudentReports } from "@/lib/course";
 import { getReviewQueue } from "@/lib/review-queue";
 import { timeAgo } from "@/lib/format";
@@ -87,7 +87,7 @@ export default async function AdminDashboard() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {r.student.telegramUsername ? (
                     <a href={`https://t.me/${r.student.telegramUsername}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-cobalt px-3 text-sm font-medium text-white hover:bg-cobalt-dark">
-                      <Send className="size-3.5" aria-hidden /> Написать
+                      <Telegram className="size-3.5" aria-hidden /> Написать
                     </a>
                   ) : null}
                   <LinkButton href={`/admin/reviews?student=${r.student.id}&tab=all`} variant="secondary" size="sm">

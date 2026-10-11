@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { ArrowLeft, CalendarClock, PartyPopper, PlayCircle } from "lucide-react";
+import { ArrowLeft, CalendarClock, PartyPopper, PlayCircle } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import { assignmentState } from "@/lib/course";
@@ -40,7 +40,7 @@ export default async function HomeworkPage({ params }: { params: Promise<{ id: s
     <div className="space-y-6">
       <div>
         <Link href="/homework" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
-          <ArrowLeft className="size-4" aria-hidden /> {mod?.title ?? "Домашки"}
+          <ArrowLeft className="size-4" aria-hidden /> {mod?.title ?? "Домашние задания"}
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
           <h1 className="cursor glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{assignment.title}</h1>

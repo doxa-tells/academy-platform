@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "@/components/icons";
 import type { ActionState } from "@/app/admin/actions";
 import { Button, Notice, cn } from "./ui";
 

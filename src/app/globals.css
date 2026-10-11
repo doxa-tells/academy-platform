@@ -50,6 +50,9 @@
 
   --radius-card: 0px;
   --radius-control: 0px;
+
+  /* Spinners tick like an 8-frame sprite instead of rotating smoothly */
+  --animate-spin: spin 0.9s steps(8) infinite;
 }
 
 @layer base {

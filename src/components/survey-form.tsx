@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import Link from "next/link";
 import { submitSurvey, type FormState } from "@/app/(student)/actions";
 import { Button, Notice, Textarea, cn } from "./ui";

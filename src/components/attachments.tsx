@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/icons";
 import type { AnnotationData } from "@/lib/db/schema";
 
 export type AttachmentView = {

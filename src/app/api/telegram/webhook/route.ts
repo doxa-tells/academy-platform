@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
           .where(eq(schema.users.id, user.id));
         await reply(
           user.role === "admin"
-            ? `✅ <b>Готово, ${escapeHtml(user.name)}!</b>\nСюда будут приходить новые домашки, оценки модулей и утренняя сводка.`
+            ? `✅ <b>Готово, ${escapeHtml(user.name)}!</b>\nСюда будут приходить новые домашние задания, оценки модулей и утренняя сводка.`
             : `✅ <b>Готово, ${escapeHtml(user.name)}!</b>\nПришлю разбор твоих работ, новые посты и напомню о дедлайнах.`,
         );
         return NextResponse.json({ ok: true });
@@ -45,6 +45,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  await reply("Я присылаю уведомления платформы курса. Вопросы лучше писать преподавателю лично или в комментарии к домашке.");
+  await reply("Я присылаю уведомления платформы курса. Вопросы лучше писать преподавателю лично или в комментарии к домашнему заданию.");
   return NextResponse.json({ ok: true });
 }

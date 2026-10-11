@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ClipboardList, Pencil, PlayCircle, VideoOff } from "lucide-react";
+import { ArrowDown, ArrowUp, ClipboardList, Pencil, PlayCircle, VideoOff } from "@/components/icons";
 import { getCourseTree } from "@/lib/course";
 import { formatDateTime } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
 import { AssignmentFields, LessonFields, ModuleFields } from "@/components/course-fields";
 import { Card, EmptyState, PageHeader, SectionTitle, cn } from "@/components/ui";
+import { LessonArt } from "@/components/lesson-art";
 import { createAssignment, createLesson, createModule, move, setSurveyOpen } from "../actions";
 
 export const metadata = { title: "Курс" };
@@ -37,8 +38,9 @@ export default async function CoursePage() {
       {tree.map((m, mi) => (
         <Card key={m.id} className="overflow-hidden" data-testid="module-card">
           <div className="flex items-start gap-3 border-b border-line bg-paper/60 px-4 py-3">
+            <LessonArt title={m.title} index={mi} size="sm" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-[17px] font-semibold text-ink">{m.title}</h2>
+              <h2 className="text-[16px] font-semibold leading-snug text-ink">{m.title}</h2>
               {m.description ? <p className="mt-0.5 text-sm text-ink-2">{m.description}</p> : null}
             </div>
             <MoveButtons kind="module" id={m.id} first={mi === 0} last={mi === tree.length - 1} />

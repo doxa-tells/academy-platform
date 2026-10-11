@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/components/icons";
 import { createPost, type ActionState } from "@/app/admin/actions";
 import { Button, Field, Input, Notice, Select, Textarea, cn } from "./ui";
 

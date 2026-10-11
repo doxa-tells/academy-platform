@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { db, schema } from "@/lib/db";
 import { ActionForm, ConfirmButton } from "@/components/action-form";
 import { ModuleFields } from "@/components/course-fields";
