@@ -80,6 +80,34 @@ if (seedDone) {
   }
 }
 
+// ---- accounts appended to seed-users.json later ----
+// Each login is handled once (marker per login), so an account edited, renamed or
+// deactivated in the admin panel is never recreated or overwritten.
+if (useFile && rawSeed) {
+  let list = [];
+  try {
+    list = JSON.parse(rawSeed);
+  } catch {}
+  for (const u of Array.isArray(list) ? list : []) {
+    if (!u?.login || !u?.name || !u?.passwordHash) continue;
+    const login = String(u.login).trim().toLowerCase();
+    const key = `seed_user_${login}`;
+    const [mark] = await rows(sql`select value from settings where key = ${key}`);
+    if (mark) continue;
+    const [exists] = await rows(sql`select id from users where login = ${login}`);
+    if (!exists) {
+      const role = u.role === "admin" ? "admin" : "student";
+      await db.execute(
+        sql`insert into users (role, name, login, password_hash, telegram_link_code)
+            values (${role}, ${String(u.name)}, ${login}, ${String(u.passwordHash)}, ${code()})`,
+      );
+      console.log(`[seed] added account ${login}`);
+    }
+    await db.execute(sql`insert into settings (key, value) values (${key}, ${new Date().toISOString()})
+                         on conflict (key) do nothing`);
+  }
+}
+
 // ---- first-time seed: starter course content ----
 const [{ n: moduleCount }] = await rows(sql`select count(*)::int as n from modules`);
 const [{ n: adminCount }] = await rows(sql`select count(*)::int as n from users where role = 'admin'`);
