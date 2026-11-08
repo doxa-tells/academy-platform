@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ClipboardList, Pencil, PlayCircle, VideoOff } from "@/components/icons";
 import { getCourseTree } from "@/lib/course";
+import { cohortLabel, dueFor, getCohortOverrides, getCohorts, videoFor } from "@/lib/cohorts";
 import { formatDateTime } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
 import { AssignmentFields, LessonFields, ModuleFields } from "@/components/course-fields";
@@ -28,7 +29,8 @@ function MoveButtons({ kind, id, first, last }: { kind: "module" | "lesson" | "a
 }
 
 export default async function CoursePage() {
-  const tree = await getCourseTree();
+  const [tree, cohorts, ov] = await Promise.all([getCourseTree(), getCohorts(), getCohortOverrides()]);
+  const multi = cohorts.length > 1;
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <PageHeader title="Курс" subtitle="Модули, видео-уроки и задания с дедлайнами" />
@@ -56,10 +58,30 @@ export default async function CoursePage() {
               <ul className="space-y-1">
                 {m.lessons.map((l, i) => (
                   <li key={l.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-paper">
-                    {l.videoUrl ? <PlayCircle className="size-4 shrink-0 text-cobalt" aria-label="Есть видео" /> : <VideoOff className="size-4 shrink-0 text-muted" aria-label="Нет видео" />}
+                    {l.videoUrl || cohorts.some((n) => videoFor(l, n, ov)) ? (
+                      <PlayCircle className="size-4 shrink-0 text-cobalt" aria-label="Есть видео" />
+                    ) : (
+                      <VideoOff className="size-4 shrink-0 text-muted" aria-label="Нет видео" />
+                    )}
                     <Link href={`/admin/course/lesson/${l.id}`} className="min-w-0 flex-1 truncate text-[15px] text-ink hover:text-cobalt">
                       {l.title}
                     </Link>
+                    {multi ? (
+                      <span className="flex shrink-0 gap-1" aria-label="Видео по потокам">
+                        {cohorts.map((n) => (
+                          <span
+                            key={n}
+                            title={`${cohortLabel(n)}: ${videoFor(l, n, ov) ? "есть видео" : "нет видео"}`}
+                            className={cn(
+                              "border px-1 text-[11px] leading-4",
+                              videoFor(l, n, ov) ? "border-cobalt/60 text-cobalt" : "border-line text-muted",
+                            )}
+                          >
+                            П{n}
+                          </span>
+                        ))}
+                      </span>
+                    ) : null}
                     <MoveButtons kind="lesson" id={l.id} first={i === 0} last={i === m.lessons.length - 1} />
                   </li>
                 ))}
@@ -68,7 +90,7 @@ export default async function CoursePage() {
                 <summary className="cursor-pointer text-sm font-medium text-cobalt">+ Добавить урок</summary>
                 <div className="mt-3 rounded-xl border border-line p-4">
                   <ActionForm action={createLesson} submitLabel="Добавить урок" testId="new-lesson-form">
-                    <LessonFields moduleId={m.id} />
+                    <LessonFields moduleId={m.id} cohorts={cohorts} />
                   </ActionForm>
                 </div>
               </details>
@@ -84,9 +106,22 @@ export default async function CoursePage() {
                     <Link href={`/admin/course/assignment/${a.id}`} className="min-w-0 flex-1 truncate text-[15px] text-ink hover:text-cobalt">
                       {a.title}
                     </Link>
-                    <span className={cn("hidden shrink-0 text-xs sm:inline", a.dueAt ? "text-ink-2" : "text-muted")}>
-                      {a.dueAt ? `до ${formatDateTime(a.dueAt)}` : "без срока"}
-                    </span>
+                    {multi ? (
+                      <span className="hidden shrink-0 text-right text-xs leading-4 sm:block">
+                        {cohorts.map((n) => {
+                          const due = dueFor(a, n, ov);
+                          return (
+                            <span key={n} className={cn("block", due ? "text-ink-2" : "text-muted")}>
+                              П{n}: {due ? `до ${formatDateTime(due)}` : "без срока"}
+                            </span>
+                          );
+                        })}
+                      </span>
+                    ) : (
+                      <span className={cn("hidden shrink-0 text-xs sm:inline", a.dueAt ? "text-ink-2" : "text-muted")}>
+                        {a.dueAt ? `до ${formatDateTime(a.dueAt)}` : "без срока"}
+                      </span>
+                    )}
                     <MoveButtons kind="assignment" id={a.id} first={i === 0} last={i === m.assignments.length - 1} />
                   </li>
                 ))}
@@ -95,7 +130,7 @@ export default async function CoursePage() {
                 <summary className="cursor-pointer text-sm font-medium text-cobalt">+ Добавить задание</summary>
                 <div className="mt-3 rounded-xl border border-line p-4">
                   <ActionForm action={createAssignment} submitLabel="Добавить задание" testId="new-assignment-form">
-                    <AssignmentFields moduleId={m.id} lessons={m.lessons} />
+                    <AssignmentFields moduleId={m.id} lessons={m.lessons} cohorts={cohorts} />
                   </ActionForm>
                 </div>
               </details>

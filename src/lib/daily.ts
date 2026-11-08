@@ -1,7 +1,8 @@
 import "server-only";
-import { and, eq, gt, isNotNull, lte } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getStudentReports } from "./course";
+import { dueFor, getCohortOverrides } from "./cohorts";
 import { getReviewQueue } from "./review-queue";
 import { escapeHtml, sendTelegram } from "./telegram";
 import { formatDateTime } from "./format";
@@ -29,39 +30,33 @@ export async function runDaily(now = new Date()) {
     return !st || st === "revision";
   };
 
-  // Deadlines in the next ~30 hours → "tomorrow" reminder
-  const soon = await db
-    .select()
-    .from(schema.assignments)
-    .where(and(isNotNull(schema.assignments.dueAt), gt(schema.assignments.dueAt, now), lte(schema.assignments.dueAt, new Date(now.getTime() + 30 * 3600 * 1000))));
-  for (const a of soon) {
-    for (const s of students) {
-      if (!s.telegramChatId || !needsAction(a.id, s.id)) continue;
-      if (!(await remindOnce("due_soon", a.id, s.id))) continue;
-      await sendTelegram(
-        s.telegramChatId,
-        `⏰ <b>Скоро дедлайн</b>\n${escapeHtml(a.title)}\nСрок: ${formatDateTime(a.dueAt)}`,
-        { path: `/homework/${a.id}`, label: "Сдать работу" },
-      );
-      summary.dueSoon++;
-    }
-  }
-
-  // Became overdue within the last 3 days → one gentle nudge
-  const late = await db
-    .select()
-    .from(schema.assignments)
-    .where(and(isNotNull(schema.assignments.dueAt), lte(schema.assignments.dueAt, now), gt(schema.assignments.dueAt, new Date(now.getTime() - 3 * 86400 * 1000))));
-  for (const a of late) {
-    for (const s of students) {
-      if (!s.telegramChatId || !needsAction(a.id, s.id)) continue;
-      if (!(await remindOnce("overdue", a.id, s.id))) continue;
-      await sendTelegram(
-        s.telegramChatId,
-        `📌 <b>Срок задания прошёл</b>\n${escapeHtml(a.title)}\nНичего страшного — загрузи, что успел, и получи разбор.`,
-        { path: `/homework/${a.id}`, label: "Открыть задание" },
-      );
-      summary.overdue++;
+  // Сроки у каждого потока свои: считаем их для каждого студента отдельно.
+  const [assignments, ov] = await Promise.all([db.select().from(schema.assignments), getCohortOverrides()]);
+  const soonUntil = now.getTime() + 30 * 3600 * 1000; // "завтра" ≈ ближайшие 30 часов
+  const lateSince = now.getTime() - 3 * 86400 * 1000; // просрочено не больше 3 дней назад
+  for (const s of students) {
+    if (!s.telegramChatId) continue;
+    for (const a of assignments) {
+      const due = dueFor(a, s.cohort, ov);
+      if (!due || !needsAction(a.id, s.id)) continue;
+      const t = due.getTime();
+      if (t > now.getTime() && t <= soonUntil) {
+        if (!(await remindOnce("due_soon", a.id, s.id))) continue;
+        await sendTelegram(
+          s.telegramChatId,
+          `⏰ <b>Скоро дедлайн</b>\n${escapeHtml(a.title)}\nСрок: ${formatDateTime(due)}`,
+          { path: `/homework/${a.id}`, label: "Сдать работу" },
+        );
+        summary.dueSoon++;
+      } else if (t <= now.getTime() && t > lateSince) {
+        if (!(await remindOnce("overdue", a.id, s.id))) continue;
+        await sendTelegram(
+          s.telegramChatId,
+          `📌 <b>Срок задания прошёл</b>\n${escapeHtml(a.title)}\nНичего страшного — загрузи, что успел, и получи разбор.`,
+          { path: `/homework/${a.id}`, label: "Открыть задание" },
+        );
+        summary.overdue++;
+      }
     }
   }
 

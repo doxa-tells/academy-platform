@@ -58,7 +58,7 @@ export function VideoEmbed({ url, title }: { url: string; title: string }) {
     return (
       <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface text-muted">
         <PlayCircle className="size-10" aria-hidden />
-        <p className="px-6 text-center text-sm">{url ? "Не получилось встроить это видео" : "Видео скоро появится"}</p>
+        <p className="px-6 text-center text-sm">{url ? "Не получилось встроить это видео" : "Запись урока появится после занятия"}</p>
         {url ? (
           <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-cobalt underline">
             Открыть по ссылке

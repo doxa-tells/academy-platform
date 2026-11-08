@@ -30,10 +30,17 @@ export async function notifyAdmins(html: string, link?: Link) {
   );
 }
 
-export async function activeStudentIds() {
+/** Активные студенты; с cohort — только этого потока. */
+export async function activeStudentIds(cohort?: number) {
   const rows = await db
     .select({ id: schema.users.id })
     .from(schema.users)
-    .where(and(eq(schema.users.role, "student"), eq(schema.users.active, true)));
+    .where(
+      and(
+        eq(schema.users.role, "student"),
+        eq(schema.users.active, true),
+        cohort ? eq(schema.users.cohort, cohort) : undefined,
+      ),
+    );
   return rows.map((r) => r.id);
 }

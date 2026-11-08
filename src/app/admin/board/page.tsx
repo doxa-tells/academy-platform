@@ -14,7 +14,7 @@ export default async function AdminBoard() {
   const [posts, students, targets, reads] = await Promise.all([
     db.select().from(schema.posts).orderBy(desc(schema.posts.pinned), desc(schema.posts.createdAt)),
     db
-      .select({ id: schema.users.id, name: schema.users.name })
+      .select({ id: schema.users.id, name: schema.users.name, cohort: schema.users.cohort })
       .from(schema.users)
       .where(and(eq(schema.users.role, "student"), eq(schema.users.active, true)))
       .orderBy(asc(schema.users.createdAt)),

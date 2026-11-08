@@ -9,7 +9,7 @@ export const metadata = { title: "Домашние задания" };
 
 export default async function HomeworkList() {
   const user = await requireStudent();
-  const [tree, state] = await Promise.all([getCourseTree(), getStudentState(user.id)]);
+  const [tree, state] = await Promise.all([getCourseTree(user.cohort), getStudentState(user.id)]);
   const now = new Date();
   const modules = tree.filter((m) => m.assignments.length > 0);
 

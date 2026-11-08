@@ -10,7 +10,7 @@ export const metadata = { title: "Уроки" };
 
 export default async function LessonsPage() {
   const user = await requireStudent();
-  const [tree, state] = await Promise.all([getCourseTree(), getStudentState(user.id)]);
+  const [tree, state] = await Promise.all([getCourseTree(user.cohort), getStudentState(user.id)]);
   const progress = computeProgress(tree, state);
   const withLessons = progress.modules.filter((m) => m.module.lessons.length > 0);
 

@@ -68,9 +68,10 @@ if (seedDone) {
       if (exists) continue;
       const hash = u.passwordHash ? String(u.passwordHash) : await bcrypt.hash(String(u.password), 10);
       const role = u.role === "admin" ? "admin" : "student";
+      const cohort = Number.isInteger(u.cohort) && u.cohort > 0 ? u.cohort : 1;
       await db.execute(
-        sql`insert into users (role, name, login, password_hash, telegram_link_code)
-            values (${role}, ${String(u.name)}, ${login}, ${hash}, ${code()})`,
+        sql`insert into users (role, name, login, password_hash, telegram_link_code, cohort)
+            values (${role}, ${String(u.name)}, ${login}, ${hash}, ${code()}, ${cohort})`,
       );
       created++;
     }
@@ -97,11 +98,12 @@ if (useFile && rawSeed) {
     const [exists] = await rows(sql`select id from users where login = ${login}`);
     if (!exists) {
       const role = u.role === "admin" ? "admin" : "student";
+      const cohort = Number.isInteger(u.cohort) && u.cohort > 0 ? u.cohort : 1;
       await db.execute(
-        sql`insert into users (role, name, login, password_hash, telegram_link_code)
-            values (${role}, ${String(u.name)}, ${login}, ${String(u.passwordHash)}, ${code()})`,
+        sql`insert into users (role, name, login, password_hash, telegram_link_code, cohort)
+            values (${role}, ${String(u.name)}, ${login}, ${String(u.passwordHash)}, ${code()}, ${cohort})`,
       );
-      console.log(`[seed] added account ${login}`);
+      console.log(`[seed] added account ${login} (поток ${cohort})`);
     }
     await db.execute(sql`insert into settings (key, value) values (${key}, ${new Date().toISOString()})
                          on conflict (key) do nothing`);

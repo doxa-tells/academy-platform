@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { ArrowLeft, CalendarClock } from "@/components/icons";
 import { db, schema } from "@/lib/db";
+import { cohortLabel, getAssignmentForCohort } from "@/lib/cohorts";
 import { getThread } from "@/lib/homework";
 import { formatDateTime } from "@/lib/format";
 import { Markdown } from "@/components/markdown";
@@ -24,12 +25,14 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
       .returning();
   }
 
-  const [student, assignment, thread] = await Promise.all([
+  const [student, stored, thread] = await Promise.all([
     db.query.users.findFirst({ where: eq(schema.users.id, submission.studentId) }),
     db.query.assignments.findFirst({ where: eq(schema.assignments.id, submission.assignmentId) }),
     getThread(submission.id),
   ]);
-  if (!student || !assignment) notFound();
+  if (!student || !stored) notFound();
+  // Срок — тот, что у потока этого студента
+  const assignment = await getAssignmentForCohort(stored, student.cohort);
 
   const images = thread
     .filter((t) => t.entry.kind === "attempt")
@@ -46,7 +49,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
           <Avatar name={student.name} size={40} />
           <div className="min-w-0 flex-1">
             <h1 className="glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[15px]">{assignment.title}</h1>
-            <p className="text-sm text-ink-2">{student.name}</p>
+            <p className="text-sm text-ink-2">
+              {student.name} · {cohortLabel(student.cohort)}
+            </p>
           </div>
           <StatusBadge status={submission.status} />
         </div>

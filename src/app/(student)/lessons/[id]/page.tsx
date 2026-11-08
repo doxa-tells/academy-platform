@@ -12,7 +12,7 @@ import { LessonArt } from "@/components/lesson-art";
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireStudent();
-  const [tree, state] = await Promise.all([getCourseTree(), getStudentState(user.id)]);
+  const [tree, state] = await Promise.all([getCourseTree(user.cohort), getStudentState(user.id)]);
   const all = tree.flatMap((m) => m.lessons.map((l) => ({ l, m })));
   const idx = all.findIndex((x) => x.l.id === id);
   if (idx === -1) notFound();

@@ -5,19 +5,42 @@ import { Loader2 } from "@/components/icons";
 import { createPost, type ActionState } from "@/app/admin/actions";
 import { Button, Field, Input, Notice, Select, Textarea, cn } from "./ui";
 
-export function PostComposer({ students }: { students: { id: string; name: string }[] }) {
+export function PostComposer({ students }: { students: { id: string; name: string; cohort: number }[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(createPost, null);
   const [kind, setKind] = useState("note");
   const [audience, setAudience] = useState<"all" | "selected">("all");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLFormElement>(null);
+  const cohorts = [...new Set(students.map((s) => s.cohort))].sort((a, b) => b - a);
 
   useEffect(() => {
     if (state?.ok) {
       ref.current?.reset();
       setKind("note");
       setAudience("all");
+      setPicked(new Set());
     }
   }, [state]);
+
+  const toggle = (id: string, on: boolean) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const pickCohort = (cohort: number) => {
+    const ids = students.filter((s) => s.cohort === cohort).map((s) => s.id);
+    setPicked((prev) => {
+      const all = ids.every((id) => prev.has(id));
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (all) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  };
 
   return (
     <form ref={ref} action={action} className="space-y-4 rounded-[var(--radius-card)] border border-line bg-surface p-4 sm:p-5" data-testid="post-composer">
@@ -62,12 +85,37 @@ export function PostComposer({ students }: { students: { id: string; name: strin
           ))}
         </div>
         {audience === "selected" ? (
-          <div className="flex flex-wrap gap-3 pt-1">
-            {students.map((s) => (
-              <label key={s.id} className="flex items-center gap-2 text-[15px] text-ink">
-                <input type="checkbox" name="targets" value={s.id} className="size-4 accent-[var(--color-cobalt)]" />
-                {s.name}
-              </label>
+          <div className="space-y-3 pt-1">
+            {cohorts.map((c) => (
+              <div key={c} className="space-y-2">
+                {cohorts.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => pickCohort(c)}
+                    className="text-sm font-medium text-cobalt hover:underline"
+                    data-testid={`pick-cohort-${c}`}
+                  >
+                    Поток {c} — выбрать всех
+                  </button>
+                ) : null}
+                <div className="flex flex-wrap gap-3">
+                  {students
+                    .filter((s) => s.cohort === c)
+                    .map((s) => (
+                      <label key={s.id} className="flex items-center gap-2 text-[15px] text-ink">
+                        <input
+                          type="checkbox"
+                          name="targets"
+                          value={s.id}
+                          checked={picked.has(s.id)}
+                          onChange={(e) => toggle(s.id, e.target.checked)}
+                          className="size-4 accent-[var(--color-cobalt)]"
+                        />
+                        {s.name}
+                      </label>
+                    ))}
+                </div>
+              </div>
             ))}
             {students.length === 0 ? <p className="text-sm text-muted">Сначала добавь студентов.</p> : null}
           </div>

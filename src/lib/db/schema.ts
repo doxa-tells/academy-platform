@@ -27,6 +27,8 @@ export const users = pgTable("users", {
   failedLogins: integer("failed_logins").notNull().default(0),
   lockedUntil: ts("locked_until"),
   lastSeenAt: ts("last_seen_at"),
+  /** Поток (группа набора). Видео уроков и дедлайны задаются отдельно для каждого потока. */
+  cohort: integer("cohort").notNull().default(1),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -70,6 +72,38 @@ export const assignments = pgTable(
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [index("assignments_module_idx").on(t.moduleId)],
+);
+
+/**
+ * Видео урока для потоков 2, 3, … (видео потока 1 — lessons.video_url).
+ * Нет строки — у потока нет записи этого урока.
+ */
+export const lessonVideos = pgTable(
+  "lesson_videos",
+  {
+    lessonId: uuid("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    cohort: integer("cohort").notNull(),
+    videoUrl: text("video_url").notNull().default(""),
+  },
+  (t) => [primaryKey({ columns: [t.lessonId, t.cohort] })],
+);
+
+/**
+ * Срок задания для потоков 2, 3, … (срок потока 1 — assignments.due_at).
+ * Нет строки или due_at = null — у потока нет срока.
+ */
+export const assignmentDeadlines = pgTable(
+  "assignment_deadlines",
+  {
+    assignmentId: uuid("assignment_id")
+      .notNull()
+      .references(() => assignments.id, { onDelete: "cascade" }),
+    cohort: integer("cohort").notNull(),
+    dueAt: ts("due_at"),
+  },
+  (t) => [primaryKey({ columns: [t.assignmentId, t.cohort] })],
 );
 
 export type SubmissionStatus = "submitted" | "in_review" | "revision" | "accepted";

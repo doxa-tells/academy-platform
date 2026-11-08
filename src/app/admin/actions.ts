@@ -3,12 +3,13 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, asc, eq, gt, lt, desc, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, lt, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/lib/db";
 import { generateLinkCode, generatePassword, hashPassword, requireAdmin } from "@/lib/auth";
 import { parseAttachments, isAllowedUploadUrl } from "@/lib/uploads-server";
 import { activeStudentIds, notifyUser, notifyUsers } from "@/lib/notify";
+import { getCohortOverrides, saveAssignmentDeadline, saveLessonVideo } from "@/lib/cohorts";
 import { escapeHtml, setupBot, sendTelegram } from "@/lib/telegram";
 import { deleteSetting, setSetting } from "@/lib/settings";
 import { formatDateTime, parseLocalDateTime } from "@/lib/format";
@@ -18,6 +19,22 @@ export type ActionState = { ok?: boolean; error?: string; message?: string; pass
 
 const str = (form: FormData, key: string, max = 10000) => String(form.get(key) ?? "").trim().slice(0, max);
 const bool = (form: FormData, key: string) => form.get(key) === "on" || form.get(key) === "true";
+
+/** Поля потоков 2+ из формы: prefix + номер потока → значение. */
+function cohortValues(form: FormData, prefix: string, max = 1000): [number, string][] {
+  const out: [number, string][] = [];
+  for (const [key, value] of form.entries()) {
+    const m = key.match(new RegExp(`^${prefix}(\\d+)$`));
+    const n = m ? Number(m[1]) : NaN;
+    if (Number.isInteger(n) && n >= 2 && n <= 99) out.push([n, String(value ?? "").trim().slice(0, max)]);
+  }
+  return out;
+}
+
+const cohortOf = (form: FormData, fallback = 1) => {
+  const n = Number(str(form, "cohort", 3));
+  return Number.isInteger(n) && n >= 1 && n <= 99 ? n : fallback;
+};
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -43,15 +60,17 @@ export async function createStudent(_prev: ActionState, form: FormData): Promise
   const exists = await db.query.users.findFirst({ where: eq(schema.users.login, login) });
   if (exists) return { error: `Логин «${login}» уже занят.` };
   const password = generatePassword();
+  const cohort = cohortOf(form);
   await db.insert(schema.users).values({
     role: "student",
     name,
     login,
+    cohort,
     passwordHash: await hashPassword(password),
     telegramLinkCode: generateLinkCode(),
   });
   refresh();
-  return { ok: true, login, password, message: `Студент ${name} добавлен.` };
+  return { ok: true, login, password, message: `Студент ${name} добавлен в поток ${cohort}.` };
 }
 
 export async function resetPassword(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -76,7 +95,11 @@ export async function updateStudent(_prev: ActionState, form: FormData): Promise
   if (!name || login.length < 3) return { error: "Проверь имя и логин." };
   const clash = await db.query.users.findFirst({ where: eq(schema.users.login, login) });
   if (clash && clash.id !== id) return { error: `Логин «${login}» уже занят.` };
-  await db.update(schema.users).set({ name, login }).where(eq(schema.users.id, id));
+  const current = await db.query.users.findFirst({ where: eq(schema.users.id, id) });
+  await db
+    .update(schema.users)
+    .set({ name, login, cohort: cohortOf(form, current?.cohort ?? 1) })
+    .where(eq(schema.users.id, id));
   refresh();
   return { ok: true, message: "Сохранено." };
 }
@@ -184,6 +207,9 @@ export async function createLesson(_prev: ActionState, form: FormData): Promise<
       position: await nextPosition(schema.lessons, moduleId),
     })
     .returning();
+  for (const [cohort, url] of cohortValues(form, "video_c")) {
+    if (url) await saveLessonVideo(lesson.id, cohort, url);
+  }
   if (bool(form, "notify")) {
     after(async () =>
       notifyUsers(await activeStudentIds(), `🎬 <b>Новый урок</b>\n${escapeHtml(lesson.title)}`, {
@@ -201,10 +227,34 @@ export async function updateLesson(_prev: ActionState, form: FormData): Promise<
   const id = str(form, "id", 100);
   const title = str(form, "title", 200);
   if (!title) return { error: "Назови урок." };
-  await db
+  const [before, ov] = await Promise.all([
+    db.query.lessons.findFirst({ where: eq(schema.lessons.id, id) }),
+    getCohortOverrides(),
+  ]);
+  const videoUrl = str(form, "videoUrl", 1000);
+  const [lesson] = await db
     .update(schema.lessons)
-    .set({ title, videoUrl: str(form, "videoUrl", 1000), description: str(form, "description", 20000) })
-    .where(eq(schema.lessons.id, id));
+    .set({ title, videoUrl, description: str(form, "description", 20000) })
+    .where(eq(schema.lessons.id, id))
+    .returning();
+  // Потоки, у которых запись урока только что появилась — им отправлю уведомление
+  const fresh: number[] = [];
+  if (before && !before.videoUrl && videoUrl) fresh.push(1);
+  for (const [cohort, url] of cohortValues(form, "video_c")) {
+    const old = ov.videos.get(id)?.get(cohort) ?? "";
+    if (url !== old) await saveLessonVideo(id, cohort, url);
+    if (!old && url) fresh.push(cohort);
+  }
+  if (lesson && fresh.length) {
+    after(async () => {
+      for (const cohort of fresh) {
+        await notifyUsers(await activeStudentIds(cohort), `🎬 <b>Запись урока уже на платформе</b>\n${escapeHtml(lesson.title)}`, {
+          path: `/lessons/${lesson.id}`,
+          label: "Смотреть",
+        });
+      }
+    });
+  }
   refresh();
   return { ok: true, message: "Урок сохранён." };
 }
@@ -234,14 +284,27 @@ export async function createAssignment(_prev: ActionState, form: FormData): Prom
       position: await nextPosition(schema.assignments, moduleId),
     })
     .returning();
+  const dues = new Map<number, Date | null>([[1, a.dueAt]]);
+  for (const [cohort, raw] of cohortValues(form, "due_c", 30)) {
+    const due = parseLocalDateTime(raw);
+    dues.set(cohort, due);
+    if (due) await saveAssignmentDeadline(a.id, cohort, due);
+  }
   if (bool(form, "notify")) {
-    after(async () =>
-      notifyUsers(
-        await activeStudentIds(),
-        `📝 <b>Новое задание</b>\n${escapeHtml(a.title)}${a.dueAt ? `\nСрок: ${formatDateTime(a.dueAt)}` : ""}`,
-        { path: `/homework/${a.id}`, label: "Открыть задание" },
-      ),
-    );
+    after(async () => {
+      const students = await db
+        .select({ id: schema.users.id, cohort: schema.users.cohort })
+        .from(schema.users)
+        .where(and(eq(schema.users.role, "student"), eq(schema.users.active, true)));
+      for (const cohort of new Set(students.map((s) => s.cohort))) {
+        const due = dues.get(cohort) ?? null;
+        await notifyUsers(
+          students.filter((s) => s.cohort === cohort).map((s) => s.id),
+          `📝 <b>Новое задание</b>\n${escapeHtml(a.title)}${due ? `\nСрок: ${formatDateTime(due)}` : ""}`,
+          { path: `/homework/${a.id}`, label: "Открыть задание" },
+        );
+      }
+    });
   }
   refresh();
   return { ok: true, message: "Задание добавлено." };
@@ -252,17 +315,42 @@ export async function updateAssignment(_prev: ActionState, form: FormData): Prom
   const id = str(form, "id", 100);
   const title = str(form, "title", 200);
   if (!title) return { error: "Назови задание." };
+  const [before, ov] = await Promise.all([
+    db.query.assignments.findFirst({ where: eq(schema.assignments.id, id) }),
+    getCohortOverrides(),
+  ]);
+  const dueAt = parseLocalDateTime(str(form, "dueAt", 30));
   await db
     .update(schema.assignments)
     .set({
       title,
       description: str(form, "description", 20000),
       lessonId: str(form, "lessonId", 100) || null,
-      dueAt: parseLocalDateTime(str(form, "dueAt", 30)),
+      dueAt,
     })
     .where(eq(schema.assignments.id, id));
-  // A new deadline deserves a new reminder
-  await db.delete(schema.reminders).where(and(eq(schema.reminders.refId, id), eq(schema.reminders.kind, "due_soon")));
+  const same = (x: Date | null | undefined, y: Date | null | undefined) => (x?.getTime() ?? null) === (y?.getTime() ?? null);
+  const changed: number[] = [];
+  if (!same(before?.dueAt, dueAt)) changed.push(1);
+  for (const [cohort, raw] of cohortValues(form, "due_c", 30)) {
+    const due = parseLocalDateTime(raw);
+    if (same(ov.dues.get(id)?.get(cohort), due)) continue;
+    await saveAssignmentDeadline(id, cohort, due);
+    changed.push(cohort);
+  }
+  // Новый срок — новое напоминание, но только тем потокам, у которых срок поменялся
+  if (changed.length) {
+    await db.delete(schema.reminders).where(
+      and(
+        eq(schema.reminders.refId, id),
+        eq(schema.reminders.kind, "due_soon"),
+        inArray(
+          schema.reminders.userId,
+          db.select({ id: schema.users.id }).from(schema.users).where(inArray(schema.users.cohort, changed)),
+        ),
+      ),
+    );
+  }
   refresh();
   return { ok: true, message: "Задание сохранено." };
 }

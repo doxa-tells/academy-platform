@@ -2,19 +2,35 @@ import "server-only";
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Assignment, Lesson, Module, Submission, SubmissionStatus, User } from "./db/schema";
+import { assignmentForCohort, getCohortOverrides, lessonForCohort, type CohortOverrides } from "./cohorts";
 
 export type ModuleNode = Module & { lessons: Lesson[]; assignments: Assignment[] };
 
-export async function getCourseTree(): Promise<ModuleNode[]> {
-  const [mods, less, asg] = await Promise.all([
+/**
+ * Дерево курса. С cohort — видео уроков и сроки заданий этого потока
+ * (так его видит студент). Без cohort — как хранится (видео и сроки потока 1).
+ */
+export async function getCourseTree(cohort?: number): Promise<ModuleNode[]> {
+  const [mods, less, asg, ov] = await Promise.all([
     db.select().from(schema.modules).orderBy(asc(schema.modules.position), asc(schema.modules.createdAt)),
     db.select().from(schema.lessons).orderBy(asc(schema.lessons.position), asc(schema.lessons.createdAt)),
     db.select().from(schema.assignments).orderBy(asc(schema.assignments.position), asc(schema.assignments.createdAt)),
+    cohort && cohort > 1 ? getCohortOverrides() : null,
   ]);
-  return mods.map((m) => ({
+  const tree = mods.map((m) => ({
     ...m,
     lessons: less.filter((l) => l.moduleId === m.id),
     assignments: asg.filter((a) => a.moduleId === m.id),
+  }));
+  return ov && cohort ? treeForCohort(tree, cohort, ov) : tree;
+}
+
+export function treeForCohort(tree: ModuleNode[], cohort: number, ov: CohortOverrides): ModuleNode[] {
+  if (cohort <= 1) return tree;
+  return tree.map((m) => ({
+    ...m,
+    lessons: m.lessons.map((l) => lessonForCohort(l, cohort, ov)),
+    assignments: m.assignments.map((a) => assignmentForCohort(a, cohort, ov)),
   }));
 }
 
@@ -146,8 +162,9 @@ export async function getStudentReports(now = new Date()): Promise<StudentReport
   if (students.length === 0) return [];
   const ids = students.map((s) => s.id);
 
-  const [tree, comps, subs, surveys, posts, targets, reads] = await Promise.all([
+  const [baseTree, ov, comps, subs, surveys, posts, targets, reads] = await Promise.all([
     getCourseTree(),
+    getCohortOverrides(),
     db.select().from(schema.lessonCompletions).where(inArray(schema.lessonCompletions.userId, ids)),
     db.select().from(schema.submissions).where(inArray(schema.submissions.studentId, ids)),
     db
@@ -160,10 +177,11 @@ export async function getStudentReports(now = new Date()): Promise<StudentReport
     db.select().from(schema.postReads).where(inArray(schema.postReads.userId, ids)),
   ]);
 
-  const allAssignments = tree.flatMap((m) => m.assignments);
-
   return students
     .map((student) => {
+      // Сроки и видео — того потока, в котором учится студент
+      const tree = treeForCohort(baseTree, student.cohort, ov);
+      const allAssignments = tree.flatMap((m) => m.assignments);
       const state: StudentState = {
         completed: new Set(comps.filter((c) => c.userId === student.id).map((c) => c.lessonId)),
         submissions: new Map(subs.filter((s) => s.studentId === student.id).map((s) => [s.assignmentId, s])),

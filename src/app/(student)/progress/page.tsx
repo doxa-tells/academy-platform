@@ -10,7 +10,7 @@ export const metadata = { title: "Прогресс" };
 
 export default async function ProgressPage() {
   const user = await requireStudent();
-  const [tree, state] = await Promise.all([getCourseTree(), getStudentState(user.id)]);
+  const [tree, state] = await Promise.all([getCourseTree(user.cohort), getStudentState(user.id)]);
   const progress = computeProgress(tree, state);
 
   return (

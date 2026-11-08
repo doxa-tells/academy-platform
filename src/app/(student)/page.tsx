@@ -9,7 +9,7 @@ import { Card, LinkButton, ProgressRing, SectionTitle, StatusBadge, cn } from "@
 export default async function StudentHome() {
   const user = await requireStudent();
   const [tree, state, posts, botUsername] = await Promise.all([
-    getCourseTree(),
+    getCourseTree(user.cohort),
     getStudentState(user.id),
     getPostsForStudent(user.id),
     getBotUsername(),

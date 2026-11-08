@@ -34,5 +34,26 @@
     "name": "Сара",
     "role": "student",
     "passwordHash": "$2b$12$nOdtVgVmHbAuhjppV0bZTugixQYXU6oA9iTOV7EKcSWq7CZnCNexG"
+  },
+  {
+    "login": "sanat",
+    "name": "Санат",
+    "role": "student",
+    "cohort": 2,
+    "passwordHash": "$2b$12$zZLKv3Pxf5SY2J1nuVkdPud9NrTER2JFRphY1BSl4HxWDcYXrrVl6"
+  },
+  {
+    "login": "elena",
+    "name": "Елена",
+    "role": "student",
+    "cohort": 2,
+    "passwordHash": "$2b$12$eEk5CjdgMTTpxReoXOjhDOD1QkpaNjZps572RZqfAv0Mj1bD3..7G"
+  },
+  {
+    "login": "zergul",
+    "name": "Зергуль",
+    "role": "student",
+    "cohort": 2,
+    "passwordHash": "$2b$12$AC4Uurkw.l0D8pEx7tEX1uASoFxtczXa2ZhW66cjgWVbdBOoU7Q2y"
   }
 ]

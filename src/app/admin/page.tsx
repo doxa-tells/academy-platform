@@ -16,6 +16,7 @@ const riskBadge = {
 export default async function AdminDashboard() {
   const [reports, queue] = await Promise.all([getStudentReports(), getReviewQueue(["submitted", "in_review"], undefined, 6)]);
   const atRisk = reports.filter((r) => r.risk !== "ok").length;
+  const multiCohort = new Set(reports.map((r) => r.student.cohort)).size > 1;
 
   return (
     <div className="space-y-10">
@@ -45,7 +46,10 @@ export default async function AdminDashboard() {
                   <Avatar name={r.student.name} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[16px] font-semibold text-ink">{r.student.name}</p>
+                      <p className="truncate text-[16px] font-semibold text-ink">
+                        {r.student.name}
+                        {multiCohort ? <span className="ml-2 text-xs font-normal text-muted">Поток {r.student.cohort}</span> : null}
+                      </p>
                       {riskBadge[r.risk]}
                     </div>
                     <p className="mt-0.5 text-sm text-ink-2">

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { ArrowLeft } from "@/components/icons";
 import { db, schema } from "@/lib/db";
+import { dueFor, getCohortOverrides, getCohorts } from "@/lib/cohorts";
 import { ActionForm, ConfirmButton } from "@/components/action-form";
 import { AssignmentFields } from "@/components/course-fields";
 import { Card, PageHeader } from "@/components/ui";
@@ -10,8 +11,13 @@ import { deleteAssignment, updateAssignment } from "../../../actions";
 
 export default async function EditAssignment({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const assignment = await db.query.assignments.findFirst({ where: eq(schema.assignments.id, id) });
+  const [assignment, cohorts, ov] = await Promise.all([
+    db.query.assignments.findFirst({ where: eq(schema.assignments.id, id) }),
+    getCohorts(),
+    getCohortOverrides(),
+  ]);
   if (!assignment) notFound();
+  const dues = Object.fromEntries(cohorts.filter((n) => n > 1).map((n) => [n, dueFor(assignment, n, ov)]));
   const lessons = await db.select().from(schema.lessons).where(eq(schema.lessons.moduleId, assignment.moduleId)).orderBy(asc(schema.lessons.position));
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -23,7 +29,7 @@ export default async function EditAssignment({ params }: { params: Promise<{ id:
       </div>
       <Card className="p-5">
         <ActionForm action={updateAssignment} submitLabel="Сохранить задание" resetOnSuccess={false}>
-          <AssignmentFields assignment={assignment} lessons={lessons} />
+          <AssignmentFields assignment={assignment} lessons={lessons} cohorts={cohorts} dues={dues} />
         </ActionForm>
       </Card>
       <div className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-st-revision/30 p-4">

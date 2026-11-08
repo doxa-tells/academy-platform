@@ -5,6 +5,7 @@ import { ArrowLeft, CalendarClock, PartyPopper, PlayCircle } from "@/components/
 import { requireStudent } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import { assignmentState } from "@/lib/course";
+import { getAssignmentForCohort } from "@/lib/cohorts";
 import { getThread } from "@/lib/homework";
 import { deadlineLabel, formatDateTime } from "@/lib/format";
 import { Markdown } from "@/components/markdown";
@@ -23,8 +24,9 @@ const STATUS_HINT = {
 export default async function HomeworkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireStudent();
-  const assignment = await db.query.assignments.findFirst({ where: eq(schema.assignments.id, id) });
-  if (!assignment) notFound();
+  const stored = await db.query.assignments.findFirst({ where: eq(schema.assignments.id, id) });
+  if (!stored) notFound();
+  const assignment = await getAssignmentForCohort(stored, user.cohort);
   const [mod, lesson, submission] = await Promise.all([
     db.query.modules.findFirst({ where: eq(schema.modules.id, assignment.moduleId) }),
     assignment.lessonId ? db.query.lessons.findFirst({ where: eq(schema.lessons.id, assignment.lessonId) }) : null,
