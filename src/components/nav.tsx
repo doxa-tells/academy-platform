@@ -182,11 +182,12 @@ export function AdminNav({ appName, name, toReview }: { appName: string; name: s
     { href: "/admin/reviews", label: "Домашние задания", icon: Inbox, badge: toReview },
     { href: "/admin/board", label: "Доска", icon: MessageSquareText },
     { href: "/admin/course", label: "Курс", icon: Layers },
+    { href: "/admin/program", label: "Программа", icon: BookOpen },
     { href: "/admin/students", label: "Студенты", icon: Users },
     { href: "/admin/surveys", label: "Опросы", icon: BarChart3 },
     { href: "/admin/settings", label: "Настройки", icon: Settings },
   ];
-  const mobileItems: Item[] = [items[0], items[1], items[2], items[3], items[4]];
+  const mobileItems: Item[] = [items[0], items[1], items[2], items[3], items[5]];
   return (
     <>
       <Sidebar items={items} appName={appName} sub={`Админка · ${name}`} />

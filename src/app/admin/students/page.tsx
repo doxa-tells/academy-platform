@@ -1,22 +1,20 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { timeAgo } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
 import { Avatar, Badge, Card, EmptyState, Field, Input, PageHeader, SectionTitle, Select } from "@/components/ui";
-import { cohortLabel, getCohorts } from "@/lib/cohorts";
+import { cohortLabel, getAdminCohort, getCohorts } from "@/lib/cohorts";
 import type { User } from "@/lib/db/schema";
 
 function CohortSelect({ id, defaultValue, options }: { id: string; defaultValue: number; options: number[] }) {
-  const max = Math.max(...options);
   return (
-    <Field label="Поток" htmlFor={id} hint="Видео уроков и сроки у каждого потока свои">
+    <Field label="Поток" htmlFor={id} hint="Перевести студента в другой поток">
       <Select id={id} name="cohort" defaultValue={String(defaultValue)}>
         {options.map((n) => (
           <option key={n} value={n}>
             {cohortLabel(n)}
           </option>
         ))}
-        <option value={max + 1}>{cohortLabel(max + 1)} — новый</option>
       </Select>
     </Field>
   );
@@ -26,22 +24,19 @@ import { createStudent, resetPassword, setStudentActive, updateStudent } from ".
 export const metadata = { title: "Студенты" };
 
 export default async function StudentsPage() {
-  const [students, cohorts] = await Promise.all([
-    db.select().from(schema.users).where(eq(schema.users.role, "student")).orderBy(asc(schema.users.createdAt)),
-    getCohorts(),
-  ]);
-  const latest = Math.max(...cohorts);
-  const groups = cohorts
-    .slice()
-    .reverse()
-    .map((n) => ({ cohort: n, list: students.filter((s) => s.cohort === n) }))
-    .filter((g) => g.list.length > 0);
+  const cohorts = await getCohorts();
+  const cohort = await getAdminCohort(cohorts);
+  const students = await db
+    .select()
+    .from(schema.users)
+    .where(and(eq(schema.users.role, "student"), eq(schema.users.cohort, cohort)))
+    .orderBy(asc(schema.users.createdAt));
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <PageHeader title="Студенты" subtitle="Аккаунты создаёшь ты — студент получает логин и пароль" />
+      <PageHeader title="Студенты" subtitle={`${cohortLabel(cohort)}. Аккаунты создаёшь ты — студент получает логин и пароль.`} />
 
       <section>
-        <SectionTitle>Добавить студента</SectionTitle>
+        <SectionTitle>Добавить студента в {cohortLabel(cohort)}</SectionTitle>
         <Card className="p-4 sm:p-5">
           <ActionForm action={createStudent} submitLabel="Создать аккаунт" testId="new-student-form">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -51,31 +46,27 @@ export default async function StudentsPage() {
               <Field label="Логин" htmlFor="new-login" hint="Латиница, цифры, точка или дефис">
                 <Input id="new-login" name="login" required maxLength={40} autoCapitalize="none" placeholder="aigerim" />
               </Field>
-              <CohortSelect id="new-cohort" defaultValue={latest} options={cohorts} />
             </div>
+            <input type="hidden" name="cohort" value={cohort} />
+            <p className="text-sm text-ink-2">Студент попадёт в {cohortLabel(cohort)}.</p>
           </ActionForm>
         </Card>
       </section>
 
-      {students.length === 0 ? (
-        <section>
-          <SectionTitle>Все студенты</SectionTitle>
-          <EmptyState title="Пока никого" text="Создай аккаунт выше и передай логин с паролем студенту." />
-        </section>
-      ) : (
-        groups.map((g) => (
-          <section key={g.cohort} data-testid={`cohort-${g.cohort}`}>
-            <SectionTitle>
-              {cohortLabel(g.cohort)} · {g.list.length}
-            </SectionTitle>
-            <div className="space-y-3">
-              {g.list.map((s) => (
-                <StudentCard key={s.id} s={s} cohorts={cohorts} />
-              ))}
-            </div>
-          </section>
-        ))
-      )}
+      <section data-testid={`cohort-${cohort}`}>
+        <SectionTitle>
+          {cohortLabel(cohort)} · {students.length}
+        </SectionTitle>
+        {students.length === 0 ? (
+          <EmptyState title="В потоке пока никого" text="Создай аккаунт выше и передай логин с паролем студенту." />
+        ) : (
+          <div className="space-y-3">
+            {students.map((s) => (
+              <StudentCard key={s.id} s={s} cohorts={cohorts} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

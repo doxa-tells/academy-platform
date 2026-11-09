@@ -266,19 +266,26 @@ await step("Админ публикует промпт всем + личную �
   await admin.page.waitForSelector("text=Лично: Прочитали 0 из 1");
 });
 
-await step("Админ добавляет задание с дедлайном завтра (уведомление студентам)", async () => {
-  await admin.page.goto(`${BASE}/admin/course`);
+await step("Админ добавляет задание в программу и ставит срок для потока (уведомление студентам)", async () => {
+  await admin.page.goto(`${BASE}/admin/program`);
   const before = messagesTo(111).length;
   await admin.page.click("text=+ Добавить задание");
   const form = admin.page.locator('[data-testid="new-assignment-form"]').first();
   await form.locator('input[name="title"]').fill(newAssignmentTitle);
   await form.locator('textarea[name="description"]').fill("Сними **одну** сцену при трёх видах освещения.");
-  const due = new Date(Date.now() + 20 * 3600 * 1000 + 5 * 3600 * 1000); // +20h, shown in Almaty time
-  await form.locator('input[name="dueAt"]').fill(due.toISOString().slice(0, 16));
   await form.locator("button[type=submit]").click();
   await admin.page.waitForSelector(`text=${newAssignmentTitle}`);
   await admin.page.waitForTimeout(500);
   assert(messagesTo(111).slice(before).some((m) => m.text.includes("Новое задание")), "нет уведомления о новом задании");
+  await shot(admin.page, "05a-admin-program");
+
+  // Срок — во вкладке «Курс» у потока
+  await admin.page.goto(`${BASE}/admin/course`);
+  const row = admin.page.locator('[data-testid="cohort-assignment"]', { hasText: newAssignmentTitle });
+  const due = new Date(Date.now() + 20 * 3600 * 1000 + 5 * 3600 * 1000); // +20h, shown in Almaty time
+  await row.locator('input[name="dueAt"]').fill(due.toISOString().slice(0, 16));
+  await row.locator("button[type=submit]").click();
+  await row.locator("text=Срок:").waitFor();
   await shot(admin.page, "05-admin-course");
 });
 
@@ -410,7 +417,7 @@ await step("Студент отправляет доработку → адми�
 await step("Опрос после модуля: админ открывает, студент ставит 5 → тревога админу", async () => {
   await admin.page.goto(`${BASE}/admin/surveys`);
   const before = messagesTo(111).length;
-  await admin.page.click("text=Открыть для всех");
+  await admin.page.click("text=Открыть для потока");
   await admin.page.waitForSelector("text=Закрыть опрос");
   await admin.page.waitForTimeout(400);
   assert(messagesTo(111).slice(before).some((m) => m.text.includes("Оцени модуль")), "студент не получил приглашение на опрос");
@@ -492,28 +499,33 @@ await step("Health-эндпоинт", async () => {
   assert(r.ok && j.db === "ok", JSON.stringify(j));
 });
 
-await step("Потоки: новый поток не видит записи первого, у него свои видео и сроки", async () => {
-  // Запись урока для потока 1
+await step("Потоки: у нового потока уроки с замком, своё открытие, записи, сроки и доска", async () => {
+  // Запись урока для потока 1 — прямо в строке урока во вкладке «Курс»
   await admin.page.goto(`${BASE}/admin/course`);
-  await admin.page.click("text=Как устроен курс");
-  await admin.page.waitForURL(/\/admin\/course\/lesson\//);
-  const lessonUrl = admin.page.url();
-  const lessonId = lessonUrl.split("/").pop();
-  await admin.page.fill('input[name="videoUrl"]', "https://youtu.be/AAAAAAAAAAA");
-  await admin.page.click("text=Сохранить урок");
-  await admin.page.waitForSelector("text=Урок сохранён");
+  const lessonRow = (p) => p.locator('[data-testid="cohort-lesson"]', { hasText: "Как устроен курс" });
+  await lessonRow(admin.page).locator('input[name="videoUrl"]').fill("https://youtu.be/AAAAAAAAAAA");
+  await lessonRow(admin.page).locator('[data-testid="cohort-video-form"] button[type=submit]').click();
+  await lessonRow(admin.page).locator("text=Запись сохранена").waitFor();
+  const lessonId = await admin.page.evaluate(() => {
+    const el = [...document.querySelectorAll('[data-testid="cohort-lesson"]')].find((x) => x.textContent.includes("Как устроен курс"));
+    return el.querySelector('input[name="lessonId"]').value;
+  });
 
-  // Студент нового потока
+  // Новый поток и студент в нём
+  await admin.page.click('[data-testid="new-cohort"]');
+  await admin.page.click('[data-testid="confirm-new-cohort"]');
+  await admin.page.waitForSelector('[data-testid="cohort-tab-2"][aria-selected="true"]');
   await admin.page.goto(`${BASE}/admin/students`);
+  await admin.page.waitForSelector("text=Добавить студента в Поток 2");
   await admin.page.fill("#new-name", "Санат Новый");
   await admin.page.fill("#new-login", "sanat");
-  await admin.page.selectOption("#new-cohort", "2");
   await admin.page.click("text=Создать аккаунт");
   await admin.page.waitForSelector('[data-testid="credentials"]');
   const pass = await admin.page.textContent('[data-testid="cred-password"]');
   await admin.page.reload();
   await admin.page.waitForSelector('[data-testid="cohort-2"] >> text=Санат Новый');
-  await shot(admin.page, "21-admin-students-cohorts");
+  assert((await admin.page.locator('[data-testid="student-card"]').count()) === 1, "в потоке 2 видны студенты потока 1");
+  await shot(admin.page, "21-admin-students-cohort2");
 
   const { page: p1 } = await newSession();
   await login(p1, USERS.s3);
@@ -529,45 +541,82 @@ await step("Потоки: новый поток не видит записи п�
     headers: { "content-type": "application/json", "x-telegram-bot-api-secret-token": WEBHOOK_SECRET },
     body: JSON.stringify({ message: { text: `/start ${code}`, chat: { id: 222, type: "private" }, from: { username: "sanat_tg" } } }),
   });
+
+  // Уроки нового потока — с замком, открыть нельзя, задание закрыто
+  await p2.goto(`${BASE}/lessons`);
+  assert((await p2.locator('[data-testid="locked-lesson"]').count()) === 2, "у потока 2 уроки не закрыты");
+  await shot(p2, "22-cohort2-lessons-locked-mobile");
+  await p2.goto(`${BASE}/lessons/${lessonId}`);
+  await p2.waitForSelector('[data-testid="lesson-locked"]');
+  assert((await p2.locator("iframe").count()) === 0, "закрытый урок показывает видео");
+  await p2.goto(`${BASE}/homework`);
+  assert((await p2.locator('[data-testid="locked-assignment"]').count()) >= 1, "задания закрытого урока не закрыты");
+  const posts2 = await p2.goto(`${BASE}/board`).then(() => p2.locator("main").innerText());
+  assert(!posts2.includes("Промпт для разбора света"), "поток 2 видит пост потока 1");
+
+  // Админ открывает урок потоку 2 — уведомление только потоку 2
+  const before111 = messagesTo(111).length;
+  const before222 = messagesTo(222).length;
+  await admin.page.goto(`${BASE}/admin/course`);
+  await admin.page.waitForSelector("text=Поток 2: открыто уроков — 0");
+  await lessonRow(admin.page).locator("text=Открыть урок").click();
+  await lessonRow(admin.page).locator("text=Закрыть").waitFor();
+  await admin.page.waitForTimeout(600);
+  assert(messagesTo(222).slice(before222).some((m) => m.text.includes("Открыт урок")), "поток 2 не получил уведомление об открытии");
+  assert(!messagesTo(111).slice(before111).some((m) => m.text.includes("Открыт урок")), "уведомление об открытии ушло потоку 1");
+
   await p2.goto(`${BASE}/lessons/${lessonId}`);
   await p2.waitForSelector("text=Запись урока появится после занятия");
   assert((await p2.locator("iframe").count()) === 0, "поток 2 видит видео потока 1");
-  await shot(p2, "22-cohort2-lesson-empty-mobile");
-
-  // Срок задания потока 1 не переносится на поток 2
   await p2.goto(`${BASE}/homework`);
   const card = p2.locator(`a:has-text("${newAssignmentTitle}")`).first();
   assert((await card.innerText()).includes("Без срока"), "поток 2 видит срок потока 1");
 
-  // Админ задаёт видео для потока 2 — уведомление получает только поток 2
-  const before111 = messagesTo(111).length;
-  const before222 = messagesTo(222).length;
-  await admin.page.goto(lessonUrl);
-  await admin.page.waitForSelector('[data-testid="lesson-videos"]');
-  await admin.page.fill('input[name="video_c2"]', "https://youtu.be/BBBBBBBBBBB");
-  await admin.page.click("text=Сохранить урок");
-  await admin.page.waitForSelector("text=Урок сохранён");
+  // Запись для потока 2 — уведомление только потоку 2
+  const b222 = messagesTo(222).length;
+  await lessonRow(admin.page).locator('input[name="videoUrl"]').fill("https://youtu.be/BBBBBBBBBBB");
+  await lessonRow(admin.page).locator('[data-testid="cohort-video-form"] button[type=submit]').click();
+  await lessonRow(admin.page).locator("text=Запись сохранена").waitFor();
   await admin.page.waitForTimeout(600);
-  assert(messagesTo(222).slice(before222).some((m) => m.text.includes("Запись урока уже на платформе")), "поток 2 не получил уведомление о записи");
-  assert(!messagesTo(111).slice(before111).some((m) => m.text.includes("Запись урока")), "уведомление ушло потоку 1");
+  assert(messagesTo(222).slice(b222).some((m) => m.text.includes("Запись урока уже на платформе")), "поток 2 не получил уведомление о записи");
   await p2.goto(`${BASE}/lessons/${lessonId}`);
   assert((await p2.locator('iframe[src*="BBBBBBBBBBB"]').count()) === 1, "поток 2 не видит своё видео");
-  assert((await p2.locator('iframe[src*="AAAAAAAAAAA"]').count()) === 0, "поток 2 видит видео потока 1");
   await p1.reload();
   assert((await p1.locator('iframe[src*="AAAAAAAAAAA"]').count()) === 1, "у потока 1 пропало видео");
 
-  // Админ задаёт срок для потока 2
+  // Срок для потока 2
   await admin.page.goto(`${BASE}/admin/course`);
-  await admin.page.click(`text=${newAssignmentTitle}`);
-  await admin.page.waitForSelector('[data-testid="assignment-dues"]');
+  const row = admin.page.locator('[data-testid="cohort-assignment"]', { hasText: newAssignmentTitle });
   const due2 = new Date(Date.now() + 3 * 86400 * 1000 + 5 * 3600 * 1000);
-  await admin.page.fill('input[name="due_c2"]', due2.toISOString().slice(0, 16));
-  await admin.page.click("text=Сохранить задание");
-  await admin.page.waitForSelector("text=Задание сохранено");
+  await row.locator('input[name="dueAt"]').fill(due2.toISOString().slice(0, 16));
+  await row.locator("button[type=submit]").click();
+  await row.locator("text=Срок:").waitFor();
   await p2.goto(`${BASE}/homework`);
   assert((await p2.locator(`a:has-text("${newAssignmentTitle}")`).first().innerText()).includes("Срок:"), "у потока 2 не появился свой срок");
-  await admin.page.goto(`${BASE}/admin/course`);
-  await shot(admin.page, "23-admin-course-cohorts");
+  await shot(admin.page, "23-admin-course-cohort2");
+
+  // Доска: пост потоку 2 не виден потоку 1; пост «всем потокам» видят оба
+  await admin.page.goto(`${BASE}/admin/board`);
+  await admin.page.fill("#title", "Только для потока 2");
+  await admin.page.click("text=Опубликовать");
+  await admin.page.waitForSelector("text=Пост опубликован");
+  await admin.page.fill("#title", "Для всех потоков");
+  await admin.page.check('[data-testid="all-cohorts"]');
+  await admin.page.click("text=Опубликовать");
+  await admin.page.waitForSelector("text=Пост опубликован");
+  await p2.goto(`${BASE}/board`);
+  await p2.waitForSelector("text=Только для потока 2");
+  await p2.waitForSelector("text=Для всех потоков");
+  await p1.goto(`${BASE}/board`);
+  await p1.waitForSelector("text=Для всех потоков");
+  assert((await p1.locator("text=Только для потока 2").count()) === 0, "поток 1 видит пост потока 2");
+
+  // Админ возвращается к потоку 1 — там прежние студенты
+  await admin.page.click('[data-testid="cohort-tab-1"]');
+  await admin.page.waitForSelector('[data-testid="cohort-tab-1"][aria-selected="true"]');
+  await admin.page.goto(`${BASE}/admin`);
+  const cards = await admin.page.locator('[data-testid="risk-list"] > div').count();
+  assert(cards === 4, `в сводке потока 1 ожидалось 4 студента, найдено ${cards}`);
   await p1.close();
   await p2.close();
 });

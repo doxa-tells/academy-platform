@@ -1,37 +1,55 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Assignment, Lesson, Module, Submission, SubmissionStatus, User } from "./db/schema";
-import { assignmentForCohort, getCohortOverrides, lessonForCohort, type CohortOverrides } from "./cohorts";
+import {
+  assignmentForCohort,
+  getCohortState,
+  lessonForCohort,
+  moduleForCohort,
+  type CohortAssignment,
+  type CohortLesson,
+  type CohortState,
+} from "./cohorts";
 
-export type ModuleNode = Module & { lessons: Lesson[]; assignments: Assignment[] };
+export type ModuleNode = Module & { lessons: CohortLesson[]; assignments: CohortAssignment[] };
+type RawCourse = { mods: Module[]; less: Lesson[]; asg: Assignment[] };
 
-/**
- * Дерево курса. С cohort — видео уроков и сроки заданий этого потока
- * (так его видит студент). Без cohort — как хранится (видео и сроки потока 1).
- */
-export async function getCourseTree(cohort?: number): Promise<ModuleNode[]> {
-  const [mods, less, asg, ov] = await Promise.all([
+async function loadCourse(): Promise<RawCourse> {
+  const [mods, less, asg] = await Promise.all([
     db.select().from(schema.modules).orderBy(asc(schema.modules.position), asc(schema.modules.createdAt)),
     db.select().from(schema.lessons).orderBy(asc(schema.lessons.position), asc(schema.lessons.createdAt)),
     db.select().from(schema.assignments).orderBy(asc(schema.assignments.position), asc(schema.assignments.createdAt)),
-    cohort && cohort > 1 ? getCohortOverrides() : null,
   ]);
-  const tree = mods.map((m) => ({
-    ...m,
-    lessons: less.filter((l) => l.moduleId === m.id),
-    assignments: asg.filter((a) => a.moduleId === m.id),
-  }));
-  return ov && cohort ? treeForCohort(tree, cohort, ov) : tree;
+  return { mods, less, asg };
 }
 
-export function treeForCohort(tree: ModuleNode[], cohort: number, ov: CohortOverrides): ModuleNode[] {
-  if (cohort <= 1) return tree;
-  return tree.map((m) => ({
-    ...m,
-    lessons: m.lessons.map((l) => lessonForCohort(l, cohort, ov)),
-    assignments: m.assignments.map((a) => assignmentForCohort(a, cohort, ov)),
-  }));
+/** Дерево курса: с cohort — так, как его видит этот поток (замки, видео, сроки, опросы); без — общая программа. */
+function buildTree(c: RawCourse, cohort?: number, st?: CohortState): ModuleNode[] {
+  return c.mods.map((m) => {
+    const lessons = c.less
+      .filter((l) => l.moduleId === m.id)
+      .map((l) => (cohort && st ? lessonForCohort(l, cohort, st) : { ...l, locked: false, openedAt: null }));
+    const assignments = c.asg
+      .filter((a) => a.moduleId === m.id)
+      .map((a) => (cohort && st ? assignmentForCohort(a, lessons, cohort, st) : { ...a, locked: false }));
+    return { ...(cohort && st ? moduleForCohort(m, cohort, st) : m), lessons, assignments };
+  });
+}
+
+export async function getCourseTree(cohort?: number): Promise<ModuleNode[]> {
+  const [course, st] = await Promise.all([loadCourse(), cohort ? getCohortState() : undefined]);
+  return buildTree(course, cohort, st);
+}
+
+/** Деревья курса для разных потоков за один заход в базу. */
+export async function getCourseTrees() {
+  const [course, st] = await Promise.all([loadCourse(), getCohortState()]);
+  const cache = new Map<number, ModuleNode[]>();
+  return (cohort: number) => {
+    if (!cache.has(cohort)) cache.set(cohort, buildTree(course, cohort, st));
+    return cache.get(cohort)!;
+  };
 }
 
 export type StudentState = {
@@ -90,22 +108,24 @@ export function computeProgress(tree: ModuleNode[], state: StudentState) {
   return { modules, total, done, percent: total ? Math.round((done / total) * 100) : 0 };
 }
 
-export function assignmentState(a: Assignment, sub: Submission | undefined, now = new Date()) {
+export function assignmentState(a: Assignment & { locked?: boolean }, sub: Submission | undefined, now = new Date()) {
   const status: SubmissionStatus | "todo" = sub?.status ?? "todo";
-  const needsAction = status === "todo" || status === "revision";
+  // Закрытое задание (урок потока ещё не открыт) ничего не требует, пока по нему нет работы
+  const locked = !!a.locked && !sub;
+  const needsAction = !locked && (status === "todo" || status === "revision");
   const overdue = !!a.dueAt && a.dueAt.getTime() < now.getTime() && needsAction;
-  return { status, needsAction, overdue };
+  return { status, needsAction, overdue, locked };
 }
 
-/** Posts visible to a student: everything addressed to all, plus posts addressed to them. */
-export function visiblePostsCondition(userId: string) {
+/** Посты студента: всем его потока (или всем потокам) плюс адресованные ему лично. */
+export function visiblePostsCondition(userId: string, cohort: number) {
   return or(
-    eq(schema.posts.audience, "all"),
+    and(eq(schema.posts.audience, "all"), or(isNull(schema.posts.cohort), eq(schema.posts.cohort, cohort))),
     sql`exists (select 1 from ${schema.postTargets} pt where pt.post_id = ${schema.posts.id} and pt.user_id = ${userId})`,
   );
 }
 
-export async function getPostsForStudent(userId: string) {
+export async function getPostsForStudent(userId: string, cohort: number) {
   const rows = await db
     .select({
       post: schema.posts,
@@ -116,18 +136,18 @@ export async function getPostsForStudent(userId: string) {
       schema.postReads,
       and(eq(schema.postReads.postId, schema.posts.id), eq(schema.postReads.userId, userId)),
     )
-    .where(visiblePostsCondition(userId))
+    .where(visiblePostsCondition(userId, cohort))
     .orderBy(desc(schema.posts.pinned), desc(schema.posts.createdAt));
   return rows;
 }
 
-export async function countUnreadPosts(userId: string) {
+export async function countUnreadPosts(userId: string, cohort: number) {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.posts)
     .where(
       and(
-        visiblePostsCondition(userId),
+        visiblePostsCondition(userId, cohort),
         sql`not exists (select 1 from ${schema.postReads} pr where pr.post_id = ${schema.posts.id} and pr.user_id = ${userId})`,
       ),
     );
@@ -153,18 +173,25 @@ export type StudentReport = {
   reasons: string[];
 };
 
-export async function getStudentReports(now = new Date()): Promise<StudentReport[]> {
+/** Отчёт по студентам; с cohort — только этого потока. */
+export async function getStudentReports(now = new Date(), cohort?: number): Promise<StudentReport[]> {
   const students = await db
     .select()
     .from(schema.users)
-    .where(and(eq(schema.users.role, "student"), eq(schema.users.active, true)))
+    .where(
+      and(
+        eq(schema.users.role, "student"),
+        eq(schema.users.active, true),
+        cohort ? eq(schema.users.cohort, cohort) : undefined,
+      ),
+    )
     .orderBy(asc(schema.users.createdAt));
   if (students.length === 0) return [];
   const ids = students.map((s) => s.id);
 
-  const [baseTree, ov, comps, subs, surveys, posts, targets, reads] = await Promise.all([
-    getCourseTree(),
-    getCohortOverrides(),
+  const [course, st, comps, subs, surveys, posts, targets, reads] = await Promise.all([
+    loadCourse(),
+    getCohortState(),
     db.select().from(schema.lessonCompletions).where(inArray(schema.lessonCompletions.userId, ids)),
     db.select().from(schema.submissions).where(inArray(schema.submissions.studentId, ids)),
     db
@@ -172,7 +199,7 @@ export async function getStudentReports(now = new Date()): Promise<StudentReport
       .from(schema.surveyResponses)
       .where(inArray(schema.surveyResponses.studentId, ids))
       .orderBy(desc(schema.surveyResponses.createdAt)),
-    db.select({ id: schema.posts.id, audience: schema.posts.audience }).from(schema.posts),
+    db.select({ id: schema.posts.id, audience: schema.posts.audience, cohort: schema.posts.cohort }).from(schema.posts),
     db.select().from(schema.postTargets),
     db.select().from(schema.postReads).where(inArray(schema.postReads.userId, ids)),
   ]);
@@ -180,7 +207,7 @@ export async function getStudentReports(now = new Date()): Promise<StudentReport
   return students
     .map((student) => {
       // Сроки и видео — того потока, в котором учится студент
-      const tree = treeForCohort(baseTree, student.cohort, ov);
+      const tree = buildTree(course, student.cohort, st);
       const allAssignments = tree.flatMap((m) => m.assignments);
       const state: StudentState = {
         completed: new Set(comps.filter((c) => c.userId === student.id).map((c) => c.lessonId)),
@@ -199,7 +226,9 @@ export async function getStudentReports(now = new Date()): Promise<StudentReport
       const awaitingReview = mySubs.filter((s) => s.status === "submitted" || s.status === "in_review").length;
 
       const visible = posts.filter(
-        (p) => p.audience === "all" || targets.some((t) => t.postId === p.id && t.userId === student.id),
+        (p) =>
+          (p.audience === "all" && (p.cohort === null || p.cohort === student.cohort)) ||
+          targets.some((t) => t.postId === p.id && t.userId === student.id),
       );
       const readSet = new Set(reads.filter((r) => r.userId === student.id).map((r) => r.postId));
       const unread = visible.filter((p) => !readSet.has(p.id)).length;

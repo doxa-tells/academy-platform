@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Check, CheckCircle2, Circle, ClipboardList, PlayCircle, Sparkles } from "@/components/icons";
+import { Check, CheckCircle2, Circle, ClipboardList, Lock, PlayCircle, Sparkles } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, computeProgress, getCourseTree, getStudentState } from "@/lib/course";
-import { EmptyState, PageHeader, ProgressBar, StatusBadge, cn } from "@/components/ui";
+import { EmptyState, LockedBadge, PageHeader, ProgressBar, StatusBadge, cn } from "@/components/ui";
 import { lessonLabel } from "@/lib/format";
 import { LessonArt } from "@/components/lesson-art";
 
@@ -50,6 +50,15 @@ export default async function ProgressPage() {
                 <ul className="mt-3 space-y-1.5">
                   {mp.module.lessons.map((l, li) => {
                     const done = state.completed.has(l.id);
+                    if (l.locked) {
+                      return (
+                        <li key={l.id} className="flex items-center gap-2.5 py-1 text-[15px] text-muted">
+                          <Lock className="size-[18px] shrink-0" aria-label="Урок ещё закрыт" />
+                          <PlayCircle className="size-4 shrink-0" aria-hidden />
+                          <span className="min-w-0 truncate">{lessonLabel(l.title, mp.module.title, li, mp.module.lessons.length)}</span>
+                        </li>
+                      );
+                    }
                     return (
                       <li key={l.id}>
                         <Link href={`/lessons/${l.id}`} className="flex items-center gap-2.5 rounded-lg py-1 text-[15px] hover:text-cobalt">
@@ -66,6 +75,18 @@ export default async function ProgressPage() {
                   })}
                   {mp.module.assignments.map((a) => {
                     const st = assignmentState(a, state.submissions.get(a.id));
+                    if (st.locked) {
+                      return (
+                        <li key={a.id} className="flex items-center gap-2.5 py-1 text-[15px] text-muted">
+                          <Lock className="size-[18px] shrink-0" aria-label="Задание ещё закрыто" />
+                          <ClipboardList className="size-4 shrink-0" aria-hidden />
+                          <span className="min-w-0 flex-1 truncate">{a.title}</span>
+                          <span className="hidden sm:inline-flex">
+                            <LockedBadge />
+                          </span>
+                        </li>
+                      );
+                    }
                     return (
                       <li key={a.id}>
                         <Link href={`/homework/${a.id}`} className="flex items-center gap-2.5 rounded-lg py-1 text-[15px] hover:text-cobalt">

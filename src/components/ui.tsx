@@ -139,6 +139,21 @@ const statusText: Record<SubmissionStatus | "todo", string> = {
   accepted: "Принято",
 };
 
+/** Урок или задание, которые преподаватель ещё не открыл потоку. */
+export function LockedBadge({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-flex h-6 shrink-0 items-center px-2 text-[12px] font-semibold tracking-wide text-muted ring-1 ring-line", className)}>
+      <span aria-hidden className="opacity-60">
+        [
+      </span>
+      <span className="px-1">скоро</span>
+      <span aria-hidden className="opacity-60">
+        ]
+      </span>
+    </span>
+  );
+}
+
 export function StatusBadge({ status, className }: { status: SubmissionStatus | "todo"; className?: string }) {
   return (
     <span className={cn("inline-flex h-6 shrink-0 items-center px-2 text-[12px] font-semibold tracking-wide", statusStyles[status], className)}>

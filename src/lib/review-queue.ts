@@ -3,15 +3,16 @@ import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { SubmissionStatus } from "./db/schema";
 
-export async function getReviewQueue(statuses: SubmissionStatus[] | null, studentId?: string, limit = 200) {
+export async function getReviewQueue(statuses: SubmissionStatus[] | null, studentId?: string, limit = 200, cohort?: number) {
   const conds: SQL[] = [];
   if (statuses) conds.push(inArray(schema.submissions.status, statuses));
   if (studentId) conds.push(eq(schema.submissions.studentId, studentId));
+  if (cohort) conds.push(eq(schema.users.cohort, cohort));
   return db
     .select({
       submission: schema.submissions,
       student: { id: schema.users.id, name: schema.users.name },
-      assignment: { id: schema.assignments.id, title: schema.assignments.title, dueAt: schema.assignments.dueAt },
+      assignment: { id: schema.assignments.id, title: schema.assignments.title },
       files: sql<number>`(select count(*)::int from ${schema.attachments} a join ${schema.entries} e on e.id = a.entry_id where e.submission_id = ${schema.submissions.id} and e.kind = 'attempt')`,
     })
     .from(schema.submissions)

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { CheckCircle2, PlayCircle } from "@/components/icons";
+import { CheckCircle2, Lock, PlayCircle } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { computeProgress, getCourseTree, getStudentState } from "@/lib/course";
-import { EmptyState, PageHeader, ProgressBar } from "@/components/ui";
+import { EmptyState, LockedBadge, PageHeader, ProgressBar } from "@/components/ui";
 import { lessonLabel } from "@/lib/format";
 import { LessonArt } from "@/components/lesson-art";
 
@@ -41,6 +41,18 @@ export default async function LessonsPage() {
                 <ol className="mt-4 divide-y divide-line border border-line bg-black/40">
                   {mp.module.lessons.map((l, i) => {
                     const done = state.completed.has(l.id);
+                    if (l.locked) {
+                      return (
+                        <li key={l.id} className="flex items-center gap-3 px-4 py-3" data-testid="locked-lesson">
+                          <span className="w-6 shrink-0 text-right text-sm tabular-nums text-muted">{i + 1}</span>
+                          <span className="min-w-0 flex-1 truncate text-[15px] text-muted">{lessonLabel(l.title, mp.module.title, i, total)}</span>
+                          <Lock className="size-5 shrink-0 text-muted" aria-label="Урок ещё закрыт" />
+                          <span className="hidden sm:inline-flex">
+                            <LockedBadge />
+                          </span>
+                        </li>
+                      );
+                    }
                     return (
                       <li key={l.id}>
                         <Link href={`/lessons/${l.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-paper">

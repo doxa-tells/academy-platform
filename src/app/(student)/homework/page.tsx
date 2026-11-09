@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, getCourseTree, getStudentState } from "@/lib/course";
 import { deadlineLabel, formatDateTime } from "@/lib/format";
-import { EmptyState, PageHeader, StatusBadge, cn } from "@/components/ui";
+import { EmptyState, LockedBadge, PageHeader, StatusBadge, cn } from "@/components/ui";
+import { Lock } from "@/components/icons";
 import { LessonArt } from "@/components/lesson-art";
 
 export const metadata = { title: "Домашние задания" };
@@ -29,6 +30,22 @@ export default async function HomeworkList() {
               <ul className="space-y-2">
                 {m.assignments.map((a) => {
                   const st = assignmentState(a, state.submissions.get(a.id), now);
+                  if (st.locked) {
+                    return (
+                      <li key={a.id}>
+                        <div className="flex items-center gap-3 rounded-[var(--radius-card)] border border-line bg-surface/60 px-4 py-3.5" data-testid="locked-assignment">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[15px] font-medium text-muted">{a.title}</p>
+                            <p className="mt-0.5 text-sm text-muted">Откроется вместе с уроком</p>
+                          </div>
+                          <Lock className="size-5 shrink-0 text-muted" aria-hidden />
+                          <span className="hidden sm:inline-flex">
+                            <LockedBadge />
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={a.id}>
                       <Link

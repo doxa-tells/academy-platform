@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { ArrowLeft, CalendarClock, PartyPopper, PlayCircle } from "@/components/icons";
+import { ArrowLeft, CalendarClock, PartyPopper, PlayCircle, Lock } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import { assignmentState } from "@/lib/course";
@@ -37,6 +37,22 @@ export default async function HomeworkPage({ params }: { params: Promise<{ id: s
   const thread = submission ? await getThread(submission.id) : [];
   const st = assignmentState(assignment, submission ?? undefined);
   const hint = STATUS_HINT[st.status];
+
+  if (st.locked) {
+    return (
+      <div className="space-y-6">
+        <Link href="/homework" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+          <ArrowLeft className="size-4" aria-hidden /> {mod?.title ?? "Домашние задания"}
+        </Link>
+        <h1 className="glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{assignment.title}</h1>
+        <div className="flex flex-col items-center gap-3 border border-dashed border-line-strong bg-surface px-6 py-10 text-center" data-testid="assignment-locked">
+          <Lock className="size-12 text-muted" aria-hidden />
+          <p className="text-[15px] text-ink">Задание откроется вместе с уроком</p>
+          <p className="text-sm text-muted">{lesson ? `Урок: ${lesson.title}` : "Преподаватель скоро откроет его вашему потоку."}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

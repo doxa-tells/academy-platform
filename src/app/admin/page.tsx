@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, BarChart3, CheckCircle2, Clock, Inbox, Telegram, Settings } from "@/components/icons";
 import { getStudentReports } from "@/lib/course";
 import { getReviewQueue } from "@/lib/review-queue";
+import { cohortLabel, getAdminCohort } from "@/lib/cohorts";
 import { timeAgo } from "@/lib/format";
 import { Avatar, Badge, Card, EmptyState, LinkButton, PageHeader, ProgressBar, SectionTitle, StatusBadge, cn } from "@/components/ui";
 
@@ -14,20 +15,24 @@ const riskBadge = {
 } as const;
 
 export default async function AdminDashboard() {
-  const [reports, queue] = await Promise.all([getStudentReports(), getReviewQueue(["submitted", "in_review"], undefined, 6)]);
+  const cohort = await getAdminCohort();
+  const [reports, queue] = await Promise.all([
+    getStudentReports(undefined, cohort),
+    getReviewQueue(["submitted", "in_review"], undefined, 6, cohort),
+  ]);
   const atRisk = reports.filter((r) => r.risk !== "ok").length;
-  const multiCohort = new Set(reports.map((r) => r.student.cohort)).size > 1;
 
   return (
     <div className="space-y-10">
       <PageHeader
         title="Сводка"
         subtitle={
-          reports.length === 0
-            ? "Добавь студентов, чтобы видеть их прогресс"
+          `${cohortLabel(cohort)}: ` +
+          (reports.length === 0
+            ? "добавь студентов, чтобы видеть их прогресс"
             : atRisk === 0
-              ? "Все студенты в ритме — никого не нужно догонять"
-              : `Внимания требуют ${atRisk} из ${reports.length}`
+              ? "все студенты в ритме — никого не нужно догонять"
+              : `внимания требуют ${atRisk} из ${reports.length}`)
         }
       />
 
@@ -46,10 +51,7 @@ export default async function AdminDashboard() {
                   <Avatar name={r.student.name} size={40} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[16px] font-semibold text-ink">
-                        {r.student.name}
-                        {multiCohort ? <span className="ml-2 text-xs font-normal text-muted">Поток {r.student.cohort}</span> : null}
-                      </p>
+                      <p className="truncate text-[16px] font-semibold text-ink">{r.student.name}</p>
                       {riskBadge[r.risk]}
                     </div>
                     <p className="mt-0.5 text-sm text-ink-2">

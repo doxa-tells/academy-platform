@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const user = await requireStudent();
-  const [unread, tree, state] = await Promise.all([countUnreadPosts(user.id), getCourseTree(), getStudentState(user.id)]);
+  const [unread, tree, state] = await Promise.all([countUnreadPosts(user.id, user.cohort), getCourseTree(user.cohort), getStudentState(user.id)]);
   const todo = tree
     .flatMap((m) => m.assignments)
     .filter((a) => assignmentState(a, state.submissions.get(a.id)).needsAction).length;

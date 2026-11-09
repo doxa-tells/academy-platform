@@ -14,8 +14,8 @@ export default async function EditModule({ params }: { params: Promise<{ id: str
   if (!mod) notFound();
   return (
     <div className="mx-auto max-w-2xl">
-      <Link href="/admin/course" className="mb-3 inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
-        <ArrowLeft className="size-4" aria-hidden /> Курс
+      <Link href="/admin/program" className="mb-3 inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+        <ArrowLeft className="size-4" aria-hidden /> Программа
       </Link>
       <PageHeader title="Модуль" />
       <Card className="p-5">

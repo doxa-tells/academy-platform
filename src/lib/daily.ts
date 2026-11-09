@@ -1,8 +1,7 @@
 import "server-only";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "./db";
-import { getStudentReports } from "./course";
-import { dueFor, getCohortOverrides } from "./cohorts";
+import { getCourseTrees, getStudentReports } from "./course";
 import { getReviewQueue } from "./review-queue";
 import { escapeHtml, sendTelegram } from "./telegram";
 import { formatDateTime } from "./format";
@@ -30,15 +29,15 @@ export async function runDaily(now = new Date()) {
     return !st || st === "revision";
   };
 
-  // Сроки у каждого потока свои: считаем их для каждого студента отдельно.
-  const [assignments, ov] = await Promise.all([db.select().from(schema.assignments), getCohortOverrides()]);
+  // Сроки у каждого потока свои, а закрытые уроки потока не напоминают о себе.
+  const treeFor = await getCourseTrees();
   const soonUntil = now.getTime() + 30 * 3600 * 1000; // "завтра" ≈ ближайшие 30 часов
   const lateSince = now.getTime() - 3 * 86400 * 1000; // просрочено не больше 3 дней назад
   for (const s of students) {
     if (!s.telegramChatId) continue;
-    for (const a of assignments) {
-      const due = dueFor(a, s.cohort, ov);
-      if (!due || !needsAction(a.id, s.id)) continue;
+    for (const a of treeFor(s.cohort).flatMap((m) => m.assignments)) {
+      const due = a.dueAt;
+      if (a.locked || !due || !needsAction(a.id, s.id)) continue;
       const t = due.getTime();
       if (t > now.getTime() && t <= soonUntil) {
         if (!(await remindOnce("due_soon", a.id, s.id))) continue;
@@ -71,8 +70,10 @@ export async function runDaily(now = new Date()) {
     if (queue.length || risky.length) {
       const lines = [`☀️ <b>Сводка на сегодня</b>`];
       lines.push(queue.length ? `📥 Ждут проверки: <b>${queue.length}</b>` : "📥 Новых работ нет");
+      const multi = new Set(reports.map((r) => r.student.cohort)).size > 1;
       for (const r of risky) {
-        lines.push(`${r.risk === "high" ? "🔴" : "🟡"} ${escapeHtml(r.student.name)}: ${escapeHtml(r.reasons.join(", "))}`);
+        const who = `${escapeHtml(r.student.name)}${multi ? ` (П${r.student.cohort})` : ""}`;
+        lines.push(`${r.risk === "high" ? "🔴" : "🟡"} ${who}: ${escapeHtml(r.reasons.join(", "))}`);
       }
       for (const a of admins) {
         await sendTelegram(a.telegramChatId!, lines.join("\n"), { path: "/admin", label: "Открыть сводку" });

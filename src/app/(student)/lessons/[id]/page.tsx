@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, ClipboardList } from "@/components/icons";
+import { ArrowLeft, ArrowRight, ClipboardList, Lock } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, getCourseTree, getStudentState } from "@/lib/course";
 import { VideoEmbed } from "@/components/video-embed";
@@ -20,6 +20,22 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   const prev = all[idx - 1]?.l;
   const next = all[idx + 1]?.l;
   const tasks = mod.assignments.filter((a) => a.lessonId === lesson.id);
+
+  if (lesson.locked) {
+    return (
+      <article className="space-y-6">
+        <Link href="/lessons" className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+          <ArrowLeft className="size-4" aria-hidden /> {mod.title}
+        </Link>
+        <h1 className="glow font-display text-[13px] leading-[1.75] text-cobalt sm:text-[16px]">{lesson.title}</h1>
+        <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 border border-dashed border-line-strong bg-surface px-6 text-center" data-testid="lesson-locked">
+          <Lock className="size-12 text-muted" aria-hidden />
+          <p className="text-[15px] text-ink">Урок ещё закрыт</p>
+          <p className="text-sm text-muted">Преподаватель откроет его вашему потоку — пришлю уведомление в Telegram.</p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="space-y-6">

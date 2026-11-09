@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { Clock, Paperclip } from "@/components/icons";
 import { db, schema } from "@/lib/db";
 import { getReviewQueue } from "@/lib/review-queue";
+import { cohortLabel, getAdminCohort } from "@/lib/cohorts";
 import { timeAgo } from "@/lib/format";
 import type { SubmissionStatus } from "@/lib/db/schema";
 import { Avatar, EmptyState, PageHeader, StatusBadge, cn } from "@/components/ui";
@@ -19,16 +20,21 @@ const TABS: { key: string; label: string; statuses: SubmissionStatus[] | null }[
 export default async function ReviewsPage({ searchParams }: { searchParams: Promise<{ tab?: string; student?: string }> }) {
   const { tab = "new", student } = await searchParams;
   const current = TABS.find((t) => t.key === tab) ?? TABS[0];
+  const cohort = await getAdminCohort();
   const [rows, students] = await Promise.all([
-    getReviewQueue(current.statuses, student || undefined),
-    db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users).where(eq(schema.users.role, "student")).orderBy(asc(schema.users.createdAt)),
+    getReviewQueue(current.statuses, student || undefined, 200, cohort),
+    db
+      .select({ id: schema.users.id, name: schema.users.name })
+      .from(schema.users)
+      .where(and(eq(schema.users.role, "student"), eq(schema.users.cohort, cohort)))
+      .orderBy(asc(schema.users.createdAt)),
   ]);
   const studentName = students.find((s) => s.id === student)?.name;
   const qs = (t: string, s?: string) => `/admin/reviews?tab=${t}${s ? `&student=${s}` : ""}`;
 
   return (
     <div>
-      <PageHeader title="Домашние задания" subtitle={studentName ? `Работы студента: ${studentName}` : "Очередь проверки"} />
+      <PageHeader title="Домашние задания" subtitle={studentName ? `Работы студента: ${studentName}` : `Очередь проверки · ${cohortLabel(cohort)}`} />
       <div className="mb-3 flex gap-1 overflow-x-auto rounded-[var(--radius-control)] bg-surface p-1 ring-1 ring-line" role="tablist">
         {TABS.map((t) => (
           <Link

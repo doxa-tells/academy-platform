@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarClock, MessageCircleWarning, Sparkles } from "@/components/icons";
+import { ArrowRight, BellRing, CalendarClock, Lock, MessageCircleWarning, Sparkles } from "@/components/icons";
 import { requireStudent } from "@/lib/auth";
 import { assignmentState, computeProgress, getCourseTree, getPostsForStudent, getStudentState } from "@/lib/course";
 import { getBotUsername } from "@/lib/telegram";
@@ -11,7 +11,7 @@ export default async function StudentHome() {
   const [tree, state, posts, botUsername] = await Promise.all([
     getCourseTree(user.cohort),
     getStudentState(user.id),
-    getPostsForStudent(user.id),
+    getPostsForStudent(user.id, user.cohort),
     getBotUsername(),
   ]);
   const progress = computeProgress(tree, state);
@@ -28,8 +28,11 @@ export default async function StudentHome() {
   const surveys = progress.modules.filter((m) => m.surveyAvailable);
 
   // Next step: first lesson not completed, otherwise first assignment needing action
-  const nextLesson = tree.flatMap((m) => m.lessons).find((l) => !state.completed.has(l.id));
-  const nextTask = withState.find((x) => x.st.status === "todo");
+  const lessons = tree.flatMap((m) => m.lessons);
+  const nextLesson = lessons.find((l) => !l.locked && !state.completed.has(l.id));
+  const anyOpen = lessons.some((l) => !l.locked);
+  const waitingForLesson = !nextLesson && lessons.some((l) => l.locked);
+  const nextTask = withState.find((x) => x.st.status === "todo" && !x.st.locked);
 
   const unreadPosts = posts.filter((p) => !p.readAt).slice(0, 3);
   const firstName = user.name.split(/\s+/)[0];
@@ -41,7 +44,11 @@ export default async function StudentHome() {
           <span className="text-cobalt">$</span> привет, {firstName}
         </p>
         <h1 className="cursor glow mt-3 font-display text-[14px] leading-[1.75] text-cobalt sm:text-[18px]">
-          {progress.percent === 100 ? "Курс пройден целиком" : "Продолжим с того места, где остановились"}
+          {progress.percent === 100
+            ? "Курс пройден целиком"
+            : !anyOpen && lessons.length > 0
+              ? "Курс скоро начнётся"
+              : "Продолжим с того места, где остановились"}
         </h1>
       </div>
 
@@ -52,6 +59,12 @@ export default async function StudentHome() {
             Пройдено {progress.done} из {progress.total}
           </p>
           <p className="mt-0.5 text-sm text-ink-2">Уроки отмечаются просмотренными, задания засчитываются после «Принято».</p>
+          {waitingForLesson ? (
+            <p className="mt-2 flex items-start gap-2 text-sm text-muted" data-testid="next-locked">
+              <Lock className="size-4 shrink-0 translate-y-0.5" aria-hidden />
+              {anyOpen ? "Следующий урок откроется после занятия" : "Первый урок откроется на старте потока"} — пришлю уведомление в Telegram.
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           {nextLesson ? (

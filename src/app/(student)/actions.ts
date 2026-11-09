@@ -8,12 +8,15 @@ import { requireStudent } from "@/lib/auth";
 import { parseAttachments } from "@/lib/uploads-server";
 import { notifyAdmins } from "@/lib/notify";
 import { escapeHtml } from "@/lib/telegram";
+import { getAssignmentForCohort, openedFor, getCohortState } from "@/lib/cohorts";
 
 export type FormState = { ok?: boolean; error?: string; message?: string } | null;
 
 export async function toggleLessonComplete(lessonId: string, done: boolean) {
   const user = await requireStudent();
   if (done) {
+    // Закрытый урок отметить пройденным нельзя
+    if (!openedFor(lessonId, user.cohort, await getCohortState())) return;
     await db.insert(schema.lessonCompletions).values({ userId: user.id, lessonId }).onConflictDoNothing();
   } else {
     await db
@@ -31,12 +34,14 @@ export async function submitAttempt(_prev: FormState, form: FormData): Promise<F
 
   if (!text && files.length === 0) return { error: "Добавь фото, видео или комментарий." };
 
-  const assignment = await db.query.assignments.findFirst({ where: eq(schema.assignments.id, assignmentId) });
-  if (!assignment) return { error: "Задание не найдено." };
+  const stored = await db.query.assignments.findFirst({ where: eq(schema.assignments.id, assignmentId) });
+  if (!stored) return { error: "Задание не найдено." };
+  const assignment = await getAssignmentForCohort(stored, user.cohort);
 
   const existing = await db.query.submissions.findFirst({
     where: and(eq(schema.submissions.assignmentId, assignmentId), eq(schema.submissions.studentId, user.id)),
   });
+  if (assignment.locked && !existing) return { error: "Это задание ещё закрыто — оно откроется вместе с уроком." };
   if (existing?.status === "accepted") return { error: "Работа уже принята — новые попытки не нужны." };
 
   const now = new Date();

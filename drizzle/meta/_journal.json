@@ -15,6 +15,20 @@
       "when": 1794172456143,
       "tag": "0001_cohorts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794173956245,
+      "tag": "0002_cohort_course",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794173956800,
+      "tag": "0003_drop_lesson_videos",
+      "breakpoints": true
     }
   ]
 }

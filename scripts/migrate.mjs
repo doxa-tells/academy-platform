@@ -110,13 +110,17 @@ if (useFile && rawSeed) {
   }
 }
 
+// Каждый поток, в котором есть студенты, должен существовать в таблице потоков
+await db.execute(sql`insert into cohorts (id) values (1) on conflict do nothing`);
+await db.execute(sql`insert into cohorts (id) select distinct cohort from users where cohort > 0 on conflict do nothing`);
+
 // ---- first-time seed: starter course content ----
 const [{ n: moduleCount }] = await rows(sql`select count(*)::int as n from modules`);
 const [{ n: adminCount }] = await rows(sql`select count(*)::int as n from users where role = 'admin'`);
 if (moduleCount === 0 && adminCount > 0 && process.env.SEED_DEMO !== "0") {
   const [mod] = await rows(sql`
     insert into modules (title, description, position)
-    values ('Модуль 1. Старт', 'Знакомство с курсом и первое задание. Отредактируй этот модуль в админке → Курс.', 0)
+    values ('Модуль 1. Старт', 'Знакомство с курсом и первое задание. Отредактируй этот модуль в админке → Программа.', 0)
     returning id`);
   const [l1] = await rows(sql`
     insert into lessons (module_id, title, description, video_url, position)
@@ -124,14 +128,22 @@ if (moduleCount === 0 && adminCount > 0 && process.env.SEED_DEMO !== "0") {
       ${"Здесь будет видео-урок. Вставь ссылку на YouTube (доступ по ссылке), Vimeo, Loom или Google Drive в админке → Курс.\n\nПод видео можно писать конспект: **жирный текст**, списки, ссылки."},
       '', 0)
     returning id`);
-  await rows(sql`
+  const [l2] = await rows(sql`
     insert into lessons (module_id, title, description, video_url, position)
-    values (${mod.id}, 'Инструменты и настройка', 'Второй пример урока.', '', 1)`);
-  await rows(sql`
+    values (${mod.id}, 'Инструменты и настройка', 'Второй пример урока.', '', 1)
+    returning id`);
+  const [a1] = await rows(sql`
     insert into assignments (module_id, lesson_id, title, description, due_at, position)
     values (${mod.id}, ${l1.id}, 'Первое задание: точка А',
       ${"Загрузи 1–3 фото или короткое видео своей текущей работы и напиши в комментарии, какой результат хочешь получить к концу курса."},
-      now() + interval '7 days', 0)`);
+      now() + interval '7 days', 0)
+    returning id`);
+  // Для потока 1 стартовые уроки сразу открыты, у задания срок
+  for (const l of [l1, l2]) {
+    await db.execute(sql`insert into cohort_lessons (lesson_id, cohort, opened_at) values (${l.id}, 1, now()) on conflict do nothing`);
+  }
+  await db.execute(sql`insert into assignment_deadlines (assignment_id, cohort, due_at)
+                       select id, 1, due_at from assignments where id = ${a1.id} on conflict do nothing`);
   const [admin] = await rows(sql`select id from users where role = 'admin' order by created_at limit 1`);
   await rows(sql`
     insert into posts (author_id, kind, title, body, audience, pinned)
@@ -174,6 +186,9 @@ if (process.env.SEED_PROGRAM !== "0") {
           insert into lessons (module_id, title, description, video_url, position)
           values (${mod.id}, ${p.lessonTitle}, ${p.lessonDescription}, ${p.videoUrl}, 0) returning id`);
         await db.execute(sql`
+          insert into cohort_lessons (lesson_id, cohort, video_url, opened_at)
+          values (${lesson.id}, 1, ${p.videoUrl}, now()) on conflict do nothing`);
+        await db.execute(sql`
           insert into assignments (module_id, lesson_id, title, description, position)
           values (${mod.id}, ${lesson.id}, ${p.assignmentTitle}, ${p.assignmentDescription}, 0)`);
       }
@@ -215,12 +230,17 @@ if (process.env.SEED_PROGRAM !== "0") {
     const key = `lesson_video_${i + 1}`;
     const [prev] = await rows(sql`select value from settings where key = ${key}`);
     if (prev?.value === p.videoUrl) continue;
+    // Ссылки из course-program.mjs — записи потока 1
     const [lesson] = await rows(sql`
-      select l.id, l.video_url from lessons l join modules m on m.id = l.module_id
+      select l.id, coalesce(cl.video_url, '') as video_url
+      from lessons l join modules m on m.id = l.module_id
+      left join cohort_lessons cl on cl.lesson_id = l.id and cl.cohort = 1
       where m.title like ${`Урок ${i + 1}.%`} order by l.position, l.created_at limit 1`);
     if (!lesson) continue;
     if (!lesson.video_url || lesson.video_url === prev?.value) {
-      await db.execute(sql`update lessons set video_url = ${p.videoUrl} where id = ${lesson.id}`);
+      await db.execute(sql`
+        insert into cohort_lessons (lesson_id, cohort, video_url) values (${lesson.id}, 1, ${p.videoUrl})
+        on conflict (lesson_id, cohort) do update set video_url = excluded.video_url`);
       console.log(`[seed] video set for lesson ${i + 1}`);
     }
     await db.execute(sql`insert into settings (key, value) values (${key}, ${p.videoUrl})

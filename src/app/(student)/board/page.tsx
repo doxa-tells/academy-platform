@@ -10,7 +10,7 @@ export const metadata = { title: "Доска" };
 
 export default async function BoardPage() {
   const user = await requireStudent();
-  const posts = await getPostsForStudent(user.id);
+  const posts = await getPostsForStudent(user.id, user.cohort);
   const unreadIds = posts.filter((p) => !p.readAt).map((p) => p.post.id);
 
   // Opening the board counts as reading: the teacher sees it in the read receipts.

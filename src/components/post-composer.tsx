@@ -5,7 +5,7 @@ import { Loader2 } from "@/components/icons";
 import { createPost, type ActionState } from "@/app/admin/actions";
 import { Button, Field, Input, Notice, Select, Textarea, cn } from "./ui";
 
-export function PostComposer({ students }: { students: { id: string; name: string; cohort: number }[] }) {
+export function PostComposer({ students, cohort }: { students: { id: string; name: string; cohort: number }[]; cohort: number }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(createPost, null);
   const [kind, setKind] = useState("note");
   const [audience, setAudience] = useState<"all" | "selected">("all");
@@ -80,10 +80,17 @@ export function PostComposer({ students }: { students: { id: string; name: strin
               )}
             >
               <input type="radio" name="audience" value={a} checked={audience === a} onChange={() => setAudience(a)} className="sr-only" />
-              {a === "all" ? "Всем студентам" : "Выбранным"}
+              {a === "all" ? `Всему потоку ${cohort}` : "Выбранным"}
             </label>
           ))}
         </div>
+        <input type="hidden" name="cohort" value={cohort} />
+        {audience === "all" ? (
+          <label className="flex items-center gap-2 pt-1 text-sm text-ink-2">
+            <input type="checkbox" name="allCohorts" className="size-4 accent-[var(--color-cobalt)]" data-testid="all-cohorts" />
+            Показать всем потокам
+          </label>
+        ) : null}
         {audience === "selected" ? (
           <div className="space-y-3 pt-1">
             {cohorts.map((c) => (

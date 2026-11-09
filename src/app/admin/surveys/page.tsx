@@ -1,5 +1,6 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
+import { cohortLabel, getAdminCohort, getCohortState, surveyOpenFor } from "@/lib/cohorts";
 import { formatShort } from "@/lib/format";
 import { Avatar, Card, EmptyState, PageHeader, cn } from "@/components/ui";
 import { setSurveyOpen } from "../actions";
@@ -11,25 +12,29 @@ function scoreTone(score: number) {
 }
 
 export default async function SurveysPage() {
-  const [mods, responses] = await Promise.all([
+  const cohort = await getAdminCohort();
+  const [mods, responses, st] = await Promise.all([
     db.select().from(schema.modules).orderBy(asc(schema.modules.position)),
     db
       .select({ r: schema.surveyResponses, name: schema.users.name })
       .from(schema.surveyResponses)
       .innerJoin(schema.users, eq(schema.users.id, schema.surveyResponses.studentId))
+      .where(eq(schema.users.cohort, cohort))
       .orderBy(desc(schema.surveyResponses.createdAt)),
+    getCohortState(),
   ]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Опросы после модулей"
-        subtitle="Опрос открывается сам, когда студент проходит модуль. Низкие оценки (6 и ниже) приходят тебе в Telegram сразу."
+        subtitle={`${cohortLabel(cohort)}. Опрос открывается сам, когда студент проходит модуль. Низкие оценки (6 и ниже) приходят тебе в Telegram сразу.`}
       />
       {mods.length === 0 ? <EmptyState title="Модулей пока нет" /> : null}
       {mods.map((m) => {
         const list = responses.filter((x) => x.r.moduleId === m.id);
         const avg = list.length ? list.reduce((s, x) => s + x.r.score, 0) / list.length : null;
+        const open = surveyOpenFor(m.id, cohort, st);
         return (
           <Card key={m.id} className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -39,9 +44,9 @@ export default async function SurveysPage() {
                   {list.length ? `Ответов: ${list.length} · средняя ${avg!.toFixed(1)}` : "Ответов пока нет"}
                 </p>
               </div>
-              <form action={setSurveyOpen.bind(null, m.id, !m.surveyOpen)}>
-                <button type="submit" className="rounded-lg px-3 py-1.5 text-sm font-medium text-cobalt ring-1 ring-cobalt/30 hover:bg-cobalt-soft">
-                  {m.surveyOpen ? "Закрыть опрос" : "Открыть для всех"}
+              <form action={setSurveyOpen.bind(null, m.id, cohort, !open)}>
+                <button type="submit" className="px-3 py-1.5 text-sm font-medium text-cobalt ring-1 ring-cobalt/30 hover:bg-cobalt-soft">
+                  {open ? "Закрыть опрос" : "Открыть для потока"}
                 </button>
               </form>
             </div>

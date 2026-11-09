@@ -37,6 +37,7 @@ export const modules = pgTable("modules", {
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
   position: integer("position").notNull().default(0),
+  /** Устарело: опрос открывается для каждого потока отдельно (cohort_modules). */
   surveyOpen: boolean("survey_open").notNull().default(false),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
@@ -50,6 +51,7 @@ export const lessons = pgTable(
       .references(() => modules.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
+    /** Устарело: видео теперь у каждого потока своё (cohort_lessons). */
     videoUrl: text("video_url").notNull().default(""),
     position: integer("position").notNull().default(0),
     createdAt: ts("created_at").notNull().defaultNow(),
@@ -67,6 +69,7 @@ export const assignments = pgTable(
     lessonId: uuid("lesson_id").references(() => lessons.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
+    /** Устарело: сроки теперь у каждого потока свои (assignment_deadlines). */
     dueAt: ts("due_at"),
     position: integer("position").notNull().default(0),
     createdAt: ts("created_at").notNull().defaultNow(),
@@ -74,26 +77,44 @@ export const assignments = pgTable(
   (t) => [index("assignments_module_idx").on(t.moduleId)],
 );
 
+/** Потоки (группы набора). id — номер потока: 1, 2, 3… */
+export const cohorts = pgTable("cohorts", {
+  id: integer("id").primaryKey(),
+  title: text("title").notNull().default(""),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
 /**
- * Видео урока для потоков 2, 3, … (видео потока 1 — lessons.video_url).
- * Нет строки — у потока нет записи этого урока.
+ * Урок в конкретном потоке: открыт ли он и какая у него запись.
+ * Нет строки или opened_at = null — урок для потока закрыт (студент видит название с замком).
  */
-export const lessonVideos = pgTable(
-  "lesson_videos",
+export const cohortLessons = pgTable(
+  "cohort_lessons",
   {
     lessonId: uuid("lesson_id")
       .notNull()
       .references(() => lessons.id, { onDelete: "cascade" }),
     cohort: integer("cohort").notNull(),
     videoUrl: text("video_url").notNull().default(""),
+    openedAt: ts("opened_at"),
   },
   (t) => [primaryKey({ columns: [t.lessonId, t.cohort] })],
 );
 
-/**
- * Срок задания для потоков 2, 3, … (срок потока 1 — assignments.due_at).
- * Нет строки или due_at = null — у потока нет срока.
- */
+/** Модуль в конкретном потоке: открыт ли опрос для всего потока. */
+export const cohortModules = pgTable(
+  "cohort_modules",
+  {
+    moduleId: uuid("module_id")
+      .notNull()
+      .references(() => modules.id, { onDelete: "cascade" }),
+    cohort: integer("cohort").notNull(),
+    surveyOpen: boolean("survey_open").notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.moduleId, t.cohort] })],
+);
+
+/** Срок задания в конкретном потоке. Нет строки или due_at = null — без срока. */
 export const assignmentDeadlines = pgTable(
   "assignment_deadlines",
   {
@@ -195,6 +216,8 @@ export const posts = pgTable("posts", {
   body: text("body").notNull().default(""),
   url: text("url").notNull().default(""),
   audience: text("audience", { enum: ["all", "selected"] }).notNull().default("all"),
+  /** Поток, для которого пост. null — всем потокам. */
+  cohort: integer("cohort"),
   pinned: boolean("pinned").notNull().default(false),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
